@@ -20,9 +20,9 @@ jobs:
 
       - name: Install Supabase CLI (binary download)
         run: |
-          curl -sL https://github.com/supabase/cli/releases/latest/download/supabase-cli-linux-x64 -o supabase
+          curl -sL https://github.com/supabase/cli/releases/download/v1.168.0/supabase-cli-linux-x64 -o supabase
           chmod +x supabase
-          sudo mv supabase /usr/local/bin
+          sudo mv supabase /usr/local/bin/supabase
 
       - name: Login to Supabase
         run: |
