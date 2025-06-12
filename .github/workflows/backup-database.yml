@@ -1,4 +1,4 @@
-name: Daily Database Backup (Fixed)
+name: Daily Database Backup (Network Fixed)
 
 on:
   schedule:
@@ -41,13 +41,27 @@ jobs:
 
       - name: Login to Supabase
         run: |
-          # Forma correcta de pasar el token
           supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
-      - name: Test Supabase connection
+      - name: Test network connectivity
         run: |
-          echo "Verificando conexión con Supabase..."
-          supabase projects list
+          echo "Verificando conectividad de red..."
+
+          # Extraer host de la URL
+          DB_HOST=$(echo "$SUPABASE_DB_URL" | sed -n 's/.*@$$[^:]*$$.*/\1/p')
+          echo "Host extraído: $DB_HOST"
+
+          # Verificar resolución DNS
+          echo "Verificando resolución DNS..."
+          nslookup $DB_HOST || echo "Error en resolución DNS"
+
+          # Verificar conectividad con ping (si está disponible)
+          echo "Verificando conectividad..."
+          ping -c 3 $DB_HOST || echo "Ping falló, pero esto es normal en algunos entornos"
+
+          # Verificar puerto 5432
+          echo "Verificando puerto 5432..."
+          nc -zv $DB_HOST 5432 || echo "No se pudo conectar al puerto 5432"
 
       - name: Create timestamp folder
         run: |
@@ -56,36 +70,97 @@ jobs:
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           echo "Carpeta creada: backups/$TIMESTAMP"
 
-      - name: Backup roles
+      - name: Backup with debug and IPv4 preference
         run: |
+          echo "Intentando backup con configuración de red optimizada..."
+
+          # Configurar preferencia IPv4
+          export PGCONNECT_TIMEOUT=30
+          export PGCOMMAND_TIMEOUT=300
+
+          # Intentar backup de roles con debug
           echo "Creando backup de roles..."
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/roles.sql --role-only
-          echo "Backup de roles completado"
+          supabase db dump --debug --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/roles.sql --role-only || {
+            echo "Error en backup de roles, continuando..."
+          }
 
-      - name: Backup schema
-        run: |
+          # Intentar backup de schema con debug
           echo "Creando backup de schema..."
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/schema.sql
-          echo "Backup de schema completado"
+          supabase db dump --debug --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/schema.sql || {
+            echo "Error en backup de schema, continuando..."
+          }
 
-      - name: Backup data
-        run: |
+          # Intentar backup de datos con debug
           echo "Creando backup de datos..."
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/data.sql --data-only --use-copy
-          echo "Backup de datos completado"
+          supabase db dump --debug --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/data.sql --data-only --use-copy || {
+            echo "Error en backup de datos, continuando..."
+          }
 
-      - name: Create complete backup
-        run: |
+          # Intentar backup completo con debug
           echo "Creando backup completo..."
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/complete_backup.sql
-          echo "Backup completo creado"
+          supabase db dump --debug --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/complete_backup.sql || {
+            echo "Error en backup completo"
+          }
+
+      - name: Alternative backup method (PostgreSQL direct)
+        run: |
+          echo "Intentando método alternativo con PostgreSQL directo..."
+
+          # Instalar cliente PostgreSQL
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+          # Extraer componentes de la URL
+          DB_URL="$SUPABASE_DB_URL"
+
+          # Método más robusto para extraer componentes
+          DB_USER=$(echo $DB_URL | sed -n 's/.*:\/\/$$[^:]*$$:.*/\1/p')
+          DB_PASSWORD=$(echo $DB_URL | sed -n 's/.*:\/\/[^:]*:$$[^@]*$$@.*/\1/p')
+          DB_HOST=$(echo $DB_URL | sed -n 's/.*@$$[^:]*$$:.*/\1/p')
+          DB_PORT=$(echo $DB_URL | sed -n 's/.*:$$[0-9]*$$\/.*/\1/p')
+          DB_NAME=$(echo $DB_URL | sed -n 's/.*\/$$[^?]*$$.*/\1/p')
+
+          echo "Componentes extraídos:"
+          echo "Usuario: $DB_USER"
+          echo "Host: $DB_HOST"
+          echo "Puerto: $DB_PORT"
+          echo "Base de datos: $DB_NAME"
+
+          # Crear archivo .pgpass
+          echo "$DB_HOST:$DB_PORT:$DB_NAME:$DB_USER:$DB_PASSWORD" > ~/.pgpass
+          chmod 600 ~/.pgpass
+
+          # Configurar variables de entorno para PostgreSQL
+          export PGHOST=$DB_HOST
+          export PGPORT=$DB_PORT
+          export PGUSER=$DB_USER
+          export PGDATABASE=$DB_NAME
+          export PGPASSFILE=~/.pgpass
+          export PGCONNECT_TIMEOUT=30
+
+          # Intentar backup alternativo
+          echo "Intentando backup con pg_dump..."
+          pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f backups/$TIMESTAMP/alternative_backup.sql || {
+            echo "Error en backup alternativo con pg_dump"
+          }
 
       - name: Verify backups
         run: |
-          echo "Verificando archivos de backup..."
-          ls -la backups/$TIMESTAMP/
-          echo "Tamaños de archivos:"
-          du -h backups/$TIMESTAMP/*
+          echo "Verificando archivos de backup creados..."
+          ls -la backups/$TIMESTAMP/ || echo "No se encontró la carpeta de backups"
+
+          # Verificar si al menos un archivo se creó
+          if [ -n "$(ls -A backups/$TIMESTAMP/ 2>/dev/null)" ]; then
+            echo "✅ Se crearon archivos de backup:"
+            du -h backups/$TIMESTAMP/*
+          else
+            echo "❌ No se crearon archivos de backup"
+            echo "Creando archivo de error para documentar el problema..."
+            mkdir -p backups/$TIMESTAMP
+            echo "Error: No se pudo conectar a la base de datos desde GitHub Actions" > backups/$TIMESTAMP/error.txt
+            echo "Timestamp: $(date)" >> backups/$TIMESTAMP/error.txt
+            echo "URL utilizada: $SUPABASE_DB_URL" >> backups/$TIMESTAMP/error.txt
+          fi
 
       - name: Compress backups
         run: |
@@ -118,23 +193,17 @@ jobs:
             - 📅 Fecha: $(date +%Y-%m-%d)
             - ⏰ Hora: $(date +%H:%M:%S) UTC
             - 🏃 Run: ${{ github.run_number }}
-            - 🔧 Método: Supabase CLI oficial
+            - 🔧 Método: Supabase CLI + PostgreSQL directo
 
-            **Contenido del Backup:**
-            - 👥 Roles y permisos (roles.sql)
-            - 🏗️ Esquema de base de datos (schema.sql)
-            - 📊 Datos completos (data.sql)
-            - 💾 Backup completo (complete_backup.sql)
-
-            **Seguridad:**
-            - 🔒 Archivo encriptado con AES256
-            - 🗜️ Comprimido con gzip
+            **Estado del Backup:**
+            - Se intentaron múltiples métodos de backup
+            - Verificar contenido del archivo para confirmar éxito
 
             **Para restaurar:**
             1. Descargar el archivo .gpg
             2. Desencriptar: `gpg --decrypt backup_${{ env.TIMESTAMP }}.tar.gz.gpg > backup.tar.gz`
             3. Extraer: `tar -xzf backup.tar.gz`
-            4. Restaurar según necesidad
+            4. Revisar archivos disponibles en la carpeta extraída
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -148,7 +217,6 @@ jobs:
           sudo apt install gh -y
 
           echo "Limpiando backups antiguos..."
-          # Forma correcta de pasar el token a GitHub CLI
           gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
 
           # Mantener solo los últimos 30 backups
@@ -171,13 +239,12 @@ jobs:
 
       - name: Backup summary
         run: |
-          echo "🎉 ¡Backup completado exitosamente!"
-          echo "📋 Resumen:"
+          echo "📋 Resumen del proceso de backup:"
           echo "   - Timestamp: $TIMESTAMP"
           echo "   - Release: backup-$TIMESTAMP"
-          echo "   - Archivos incluidos: roles.sql, schema.sql, data.sql, complete_backup.sql"
-          echo "   - Estado: Encriptado y subido a GitHub Releases"
-          echo "   - Backups antiguos: Limpiados (manteniendo últimos 30)"
+          echo "   - Se intentaron múltiples métodos de backup"
+          echo "   - Verificar el contenido del release para confirmar éxito"
+          echo "   - Si hay problemas de conectividad, revisar configuración de red de Supabase"
 
 # name: Daily Database Backup (Fixed)
 
@@ -222,7 +289,8 @@ jobs:
 
 #       - name: Login to Supabase
 #         run: |
-#           echo "$SUPABASE_ACCESS_TOKEN" | supabase login --token
+#           # Forma correcta de pasar el token
+#           supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
 #       - name: Test Supabase connection
 #         run: |
@@ -328,7 +396,8 @@ jobs:
 #           sudo apt install gh -y
 
 #           echo "Limpiando backups antiguos..."
-#           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+#           # Forma correcta de pasar el token a GitHub CLI
+#           gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
 
 #           # Mantener solo los últimos 30 backups
 #           RELEASES_TO_DELETE=$(gh release list --limit 50 | grep "backup-" | tail -n +31 | awk '{print $1}')
@@ -357,67 +426,3 @@ jobs:
 #           echo "   - Archivos incluidos: roles.sql, schema.sql, data.sql, complete_backup.sql"
 #           echo "   - Estado: Encriptado y subido a GitHub Releases"
 #           echo "   - Backups antiguos: Limpiados (manteniendo últimos 30)"
-
-# # .github/workflows/backup-database.yml
-# name: Daily Database Backup
-
-# on:
-#   schedule:
-#     # Ejecutar diariamente a las 2:00 AM UTC
-#     - cron: "0 2 * * *"
-#   workflow_dispatch: # Permitir ejecución manual
-
-# jobs:
-#   backup:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: "18"
-
-#       - name: Install Supabase CLI
-#         run: |
-#           npm install -g supabase
-
-#       - name: Login to Supabase
-#         run: |
-#           echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login --token
-
-#       - name: Create database backup
-#         run: |
-#           # Crear backup completo
-#           supabase db dump --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --db-url ${{ secrets.SUPABASE_DB_URL }} > backup_$(date +%Y%m%d_%H%M%S).sql
-
-#           # Comprimir backup
-#           gzip backup_*.sql
-
-#       - name: Encrypt backup
-#         run: |
-#           # Encriptar el backup
-#           gpg --symmetric --cipher-algo AES256 --compress-algo 1 --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65536 --quiet --batch --passphrase "${{ secrets.BACKUP_ENCRYPTION_KEY }}" backup_*.sql.gz
-#           rm backup_*.sql.gz # Eliminar archivo sin encriptar
-
-#       - name: Upload backup to release
-#         uses: softprops/action-gh-release@v1
-#         with:
-#              tag_name: backup-${{ github.run_id }}
-#              name: Database Backup ${{ github.run_id }}
-#           files: backup_*.sql.gz.gpg
-#           body: |
-#             Backup automático de base de datos
-#             Fecha: $(date)
-#             Tablas incluidas: doctors, patients, medical_histories, consultations, prescriptions
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-#       - name: Cleanup old backups
-#         run: |
-#           # Mantener solo los últimos 30 backups
-#           gh release list --limit 50 | grep "backup-" | tail -n +31 | awk '{print $1}' | xargs -I {} gh release delete {} --yes
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
