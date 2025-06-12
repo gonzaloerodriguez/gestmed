@@ -1,12 +1,9 @@
-name: Daily Database Backup (Adapted)
+name: Daily Database Backup (Fixed)
 
 on:
   schedule:
     - cron: "0 2 * * *" # Todos los días a las 2:00 AM UTC
   workflow_dispatch:
-
-env:
-  BACKUP_ENABLED: true
 
 jobs:
   run_db_backup:
@@ -19,7 +16,7 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
-      BACKUP_ENABLED: ${{ env.BACKUP_ENABLED }}
+      BACKUP_ENABLED: true
 
     steps:
       - name: Check if backups are enabled
@@ -30,34 +27,28 @@ jobs:
           fi
 
       - name: Checkout repository
-        if: env.BACKUP_ENABLED == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Supabase CLI (Official Action)
-        if: env.BACKUP_ENABLED == 'true'
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
       - name: Verify Supabase CLI installation
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           supabase --version
           echo "Supabase CLI instalado correctamente"
 
       - name: Login to Supabase
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "$SUPABASE_ACCESS_TOKEN" | supabase login --token
 
       - name: Test Supabase connection
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Verificando conexión con Supabase..."
           supabase projects list
 
       - name: Create timestamp folder
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           mkdir -p backups/$TIMESTAMP
@@ -65,35 +56,30 @@ jobs:
           echo "Carpeta creada: backups/$TIMESTAMP"
 
       - name: Backup roles
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Creando backup de roles..."
           supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/roles.sql --role-only
           echo "Backup de roles completado"
 
       - name: Backup schema
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Creando backup de schema..."
           supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/schema.sql
           echo "Backup de schema completado"
 
       - name: Backup data
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Creando backup de datos..."
           supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/data.sql --data-only --use-copy
           echo "Backup de datos completado"
 
       - name: Create complete backup
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Creando backup completo..."
           supabase db dump --db-url "$SUPABASE_DB_URL" -f backups/$TIMESTAMP/complete_backup.sql
           echo "Backup completo creado"
 
       - name: Verify backups
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Verificando archivos de backup..."
           ls -la backups/$TIMESTAMP/
@@ -101,7 +87,6 @@ jobs:
           du -h backups/$TIMESTAMP/*
 
       - name: Compress backups
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Comprimiendo backups..."
           cd backups
@@ -111,7 +96,6 @@ jobs:
           echo "Tamaño del archivo comprimido: $(du -h backup_$TIMESTAMP.tar.gz | cut -f1)"
 
       - name: Encrypt backup
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Encriptando backup..."
           cd backups
@@ -121,7 +105,6 @@ jobs:
           ls -la backup_$TIMESTAMP.tar.gz.gpg
 
       - name: Upload backup to release
-        if: env.BACKUP_ENABLED == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: backup-${{ env.TIMESTAMP }}
@@ -155,7 +138,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install GitHub CLI and cleanup old backups
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Instalando GitHub CLI..."
           curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
@@ -180,14 +162,12 @@ jobs:
           fi
 
       - name: Cleanup local files
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "Limpiando archivos locales..."
           rm -rf backups/
           echo "Limpieza local completada"
 
       - name: Backup summary
-        if: env.BACKUP_ENABLED == 'true'
         run: |
           echo "🎉 ¡Backup completado exitosamente!"
           echo "📋 Resumen:"
