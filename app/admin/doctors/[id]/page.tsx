@@ -1,153 +1,191 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, User, Mail, Calendar, Shield, FileText, Activity, Download } from "lucide-react"
-import { supabase, type Doctor, type Prescription, type Admin } from "@/lib/supabase"
+import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  ArrowLeft,
+  Mail,
+  FileText,
+  User,
+  Shield,
+  Download,
+  Eye,
+  UserCheck,
+  UserX,
+} from "lucide-react";
+import {
+  supabase,
+  type Doctor,
+  type Admin,
+  type Prescription,
+} from "@/lib/supabase";
 
 interface DoctorDetailPageProps {
-  params: {
-    id: string
-  }
+  params: Promise<{ id: string }>;
 }
 
 export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [admin, setAdmin] = useState<Admin | null>(null)
-  const [doctor, setDoctor] = useState<Doctor | null>(null)
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
-  const [stats, setStats] = useState({
-    totalPrescriptions: 0,
-    activePrescriptions: 0,
-    thisMonthPrescriptions: 0,
-  })
+  // Unwrap params using React.use()
+  const { id } = use(params);
+
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [admin, setAdmin] = useState<Admin | null>(null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAdminAndLoadData()
-  }, [params.id])
+    checkAdminAndLoadData();
+  }, [id]);
 
   const checkAdminAndLoadData = async () => {
     try {
+      // Verificar que el usuario actual es administrador
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push("/login")
-        return
+        router.push("/");
+        return;
       }
 
-      // Verificar si es administrador
       const { data: adminData, error: adminError } = await supabase
         .from("admins")
         .select("*")
         .eq("id", user.id)
-        .single()
+        .single();
 
       if (adminError || !adminData) {
-        alert("Acceso denegado. No tienes permisos de administrador.")
-        router.push("/dashboard")
-        return
+        setError("No tienes permisos para ver esta información");
+        return;
       }
 
-      setAdmin(adminData)
+      setAdmin(adminData);
 
       // Cargar datos del médico
-      await loadDoctor()
-      await loadPrescriptions()
+      await loadDoctorData();
+      await loadPrescriptions();
     } catch (error: any) {
-      console.error("Error:", error.message)
-      router.push("/admin")
+      console.error("Error:", error);
+      setError("Error al cargar la información: " + error.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const loadDoctor = async () => {
+  const loadDoctorData = async () => {
     try {
-      const { data, error } = await supabase.from("doctors").select("*").eq("id", params.id).single()
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-      if (error) throw error
+      if (error) {
+        if (error.code === "PGRST116") {
+          setError("Médico no encontrado");
+        } else {
+          setError("Error al cargar datos del médico: " + error.message);
+        }
+        return;
+      }
 
-      setDoctor(data)
+      setDoctor(data);
     } catch (error: any) {
-      console.error("Error loading doctor:", error.message)
-      router.push("/admin")
+      console.error("Error loading doctor:", error);
+      setError("Error al cargar datos del médico");
     }
-  }
+  };
 
   const loadPrescriptions = async () => {
     try {
       const { data, error } = await supabase
         .from("prescriptions")
         .select("*")
-        .eq("doctor_id", params.id)
-        .order("created_at", { ascending: false })
-        .limit(10)
-
-      if (error) throw error
-
-      setPrescriptions(data || [])
-
-      // Calcular estadísticas
-      const { count: totalPrescriptions } = await supabase
-        .from("prescriptions")
-        .select("*", { count: "exact", head: true })
-        .eq("doctor_id", params.id)
-
-      const { count: activePrescriptions } = await supabase
-        .from("prescriptions")
-        .select("*", { count: "exact", head: true })
-        .eq("doctor_id", params.id)
+        .eq("doctor_id", id)
         .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(10);
 
-      // Recetas de este mes
-      const now = new Date()
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      if (error) {
+        console.error("Error loading prescriptions:", error);
+        return;
+      }
 
-      const { count: thisMonthPrescriptions } = await supabase
-        .from("prescriptions")
-        .select("*", { count: "exact", head: true })
-        .eq("doctor_id", params.id)
-        .gte("created_at", firstDayOfMonth)
-
-      setStats({
-        totalPrescriptions: totalPrescriptions || 0,
-        activePrescriptions: activePrescriptions || 0,
-        thisMonthPrescriptions: thisMonthPrescriptions || 0,
-      })
+      setPrescriptions(data || []);
     } catch (error: any) {
-      console.error("Error loading prescriptions:", error.message)
+      console.error("Error loading prescriptions:", error);
     }
-  }
+  };
+
+  const toggleDoctorStatus = async () => {
+    if (!doctor) return;
+
+    try {
+      const newStatus = !doctor.is_active;
+
+      const { error } = await supabase
+        .from("doctors")
+        .update({ is_active: newStatus })
+        .eq("id", doctor.id);
+
+      if (error) throw error;
+
+      setDoctor({ ...doctor, is_active: newStatus });
+    } catch (error: any) {
+      alert("Error al actualizar estado: " + error.message);
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando información del médico...</p>
+          <p className="mt-4 text-gray-600">
+            Cargando información del médico...
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!doctor || !admin) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600">Médico no encontrado</p>
-          <Button onClick={() => router.push("/admin")} className="mt-4">
-            Volver al Panel
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => router.push("/admin")}>
+            Volver al Panel de Administrador
           </Button>
         </div>
       </div>
-    )
+    );
+  }
+
+  if (!doctor) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Médico no encontrado</p>
+          <Button onClick={() => router.push("/admin")}>
+            Volver al Panel de Administrador
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -156,22 +194,44 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button variant="ghost" onClick={() => router.push("/admin")} className="mr-4">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/admin")}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Volver
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {doctor.gender === "female" ? "Dra." : "Dr."} {doctor.full_name}
+                  {doctor.gender === "female" ? "Dra." : "Dr."}{" "}
+                  {doctor.full_name}
                 </h1>
-                <p className="text-gray-600">Información detallada del médico</p>
+                <p className="text-gray-600">Detalles del médico</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
               <Badge variant={doctor.is_active ? "default" : "secondary"}>
                 {doctor.is_active ? "Activo" : "Inactivo"}
               </Badge>
+              <Button
+                variant={doctor.is_active ? "destructive" : "default"}
+                size="sm"
+                onClick={toggleDoctorStatus}
+              >
+                {doctor.is_active ? (
+                  <>
+                    <UserX className="h-4 w-4 mr-2" />
+                    Desactivar
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Activar
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -180,8 +240,9 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Información Personal */}
-          <div className="lg:col-span-1">
+          {/* Doctor Information */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Basic Info */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -190,188 +251,215 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600">Nombre Completo</p>
-                  <p className="font-medium">{doctor.full_name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Cédula de Identidad</p>
-                  <p className="font-medium">{doctor.cedula}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Sexo</p>
-                  <p className="font-medium">{doctor.gender === "female" ? "Femenino" : "Masculino"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Correo Electrónico</p>
-                  <p className="font-medium flex items-center">
-                    <Mail className="h-4 w-4 mr-1" />
-                    {doctor.email}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Número de Matrícula</p>
-                  <p className="font-medium flex items-center">
-                    <Shield className="h-4 w-4 mr-1" />
-                    {doctor.license_number}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Especialidad</p>
-                  <p className="font-medium">{doctor.specialty || "Médico General"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Fecha de Registro</p>
-                  <p className="font-medium flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {new Date(doctor.created_at).toLocaleDateString("es-ES", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Nombre Completo
+                    </label>
+                    <p className="text-lg font-medium">{doctor.full_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Género
+                    </label>
+                    <p className="text-lg">
+                      {doctor.gender === "female" ? "Femenino" : "Masculino"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Cédula de Identidad
+                    </label>
+                    <p className="text-lg font-mono">{doctor.cedula}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Matrícula Profesional
+                    </label>
+                    <p className="text-lg font-mono">{doctor.license_number}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Email
+                    </label>
+                    <p className="text-lg flex items-center">
+                      <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                      {doctor.email}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Especialidad
+                    </label>
+                    <p className="text-lg">
+                      {doctor.specialty || "Médico General"}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Documentos */}
-            <Card className="mt-6">
+            {/* Documents */}
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <FileText className="h-5 w-5 mr-2" />
                   Documentos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {doctor.signature_stamp_url && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Firma y Sello</p>
-                    <div className="border rounded-lg p-2 bg-gray-50">
-                      <img
-                        src={doctor.signature_stamp_url || "/placeholder.svg"}
-                        alt="Firma y sello"
-                        className="max-h-20 mx-auto"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none"
-                        }}
-                      />
+              <CardContent>
+                <div className="space-y-3">
+                  {doctor.document_url ? (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 mr-3 text-blue-600" />
+                        <div>
+                          <p className="font-medium">Documento de Identidad</p>
+                          <p className="text-sm text-gray-500">
+                            Archivo subido
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a
+                            href={doctor.document_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver
+                          </a>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={doctor.document_url} download>
+                            <Download className="h-4 w-4 mr-2" />
+                            Descargar
+                          </a>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {doctor.document_url && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Documento de Credencial</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(doctor.document_url!, "_blank")}
-                      className="w-full"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Ver Documento
-                    </Button>
-                  </div>
-                )}
-                {!doctor.signature_stamp_url && !doctor.document_url && (
-                  <p className="text-sm text-gray-500">No hay documentos cargados</p>
-                )}
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No hay documentos subidos</p>
+                    </div>
+                  )}
+
+                  {doctor.signature_stamp_url ? (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <Shield className="h-5 w-5 mr-3 text-green-600" />
+                        <div>
+                          <p className="font-medium">Sello y Firma</p>
+                          <p className="text-sm text-gray-500">
+                            Archivo subido
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a
+                            href={doctor.signature_stamp_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver
+                          </a>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={doctor.signature_stamp_url} download>
+                            <Download className="h-4 w-4 mr-2" />
+                            Descargar
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Shield className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No hay sello y firma subidos</p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Estadísticas y Recetas */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Estadísticas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Recetas</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalPrescriptions}</div>
-                </CardContent>
-              </Card>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Stats */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Estadísticas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Recetas Activas</span>
+                  <span className="text-2xl font-bold text-blue-600">
+                    {prescriptions.length}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
+                    Fecha de Registro
+                  </span>
+                  <span className="text-sm font-medium">
+                    {new Date(doctor.created_at).toLocaleDateString("es-ES")}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Estado</span>
+                  <Badge variant={doctor.is_active ? "default" : "secondary"}>
+                    {doctor.is_active ? "Activo" : "Inactivo"}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Recetas Activas</CardTitle>
-                  <Activity className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{stats.activePrescriptions}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Este Mes</CardTitle>
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">{stats.thisMonthPrescriptions}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Recetas Recientes */}
+            {/* Recent Prescriptions */}
             <Card>
               <CardHeader>
                 <CardTitle>Recetas Recientes</CardTitle>
+                <CardDescription>Últimas 10 recetas emitidas</CardDescription>
               </CardHeader>
               <CardContent>
-                {prescriptions.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No hay recetas creadas</p>
+                {prescriptions.length > 0 ? (
+                  <div className="space-y-3">
+                    {prescriptions.map((prescription) => (
+                      <div
+                        key={prescription.id}
+                        className="p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium text-sm">
+                            {prescription.patient_name}
+                          </p>
+                          <span className="text-xs text-gray-500">
+                            {new Date(
+                              prescription.date_prescribed
+                            ).toLocaleDateString("es-ES")}
+                          </span>
+                        </div>
+                        {prescription.diagnosis && (
+                          <p className="text-xs text-gray-600 mb-1">
+                            <strong>Diagnóstico:</strong>{" "}
+                            {prescription.diagnosis}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-600">
+                          <strong>Medicamentos:</strong>{" "}
+                          {prescription.medications?.length || 0}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Paciente</TableHead>
-                          <TableHead>Fecha</TableHead>
-                          <TableHead>Diagnóstico</TableHead>
-                          <TableHead>Estado</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {prescriptions.map((prescription) => (
-                          <TableRow key={prescription.id}>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{prescription.patient_name}</div>
-                                {prescription.patient_age && (
-                                  <div className="text-sm text-gray-500">{prescription.patient_age} años</div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="text-sm">
-                                  {new Date(prescription.date_prescribed).toLocaleDateString("es-ES")}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {new Date(prescription.created_at).toLocaleTimeString("es-ES", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="max-w-xs truncate">{prescription.diagnosis || "Sin diagnóstico"}</div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={prescription.is_active ? "default" : "secondary"}>
-                                {prescription.is_active ? "Activa" : "Inactiva"}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No hay recetas registradas</p>
                   </div>
                 )}
               </CardContent>
@@ -380,5 +468,5 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
         </div>
       </main>
     </div>
-  )
+  );
 }
