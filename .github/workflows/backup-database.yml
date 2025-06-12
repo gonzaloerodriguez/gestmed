@@ -1,4 +1,4 @@
-name: Daily Database Backup (Docker)
+name: Daily Database Backup (pnpm)
 
 on:
   schedule:
@@ -9,12 +9,25 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    container:
-      image: supabase/cli:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install Supabase CLI with pnpm
+        run: |
+          pnpm add -g supabase
+          supabase --version
 
       - name: Login to Supabase
         run: |
@@ -36,12 +49,6 @@ jobs:
           gzip backup_*.sql
           ls -la backup_*
 
-      - name: Install GPG and GitHub CLI
-        run: |
-          apk add --no-cache gnupg curl
-          curl -fsSL https://github.com/cli/cli/releases/download/v2.40.1/gh_2.40.1_linux_amd64.tar.gz | tar -xz
-          mv gh_2.40.1_linux_amd64/bin/gh /usr/local/bin/
-
       - name: Encrypt backup
         run: |
           echo "Encriptando backup..."
@@ -62,8 +69,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cleanup old backups
+      - name: Install GitHub CLI and cleanup
         run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
           gh release list --limit 50 | grep "backup-" | tail -n +31 | awk '{print $1}' | xargs -I {} gh release delete {} --yes || true
 
