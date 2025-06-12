@@ -1,4 +1,4 @@
-name: Daily Database Backup (NPX Method)
+name: Daily Database Backup (Direct PostgreSQL)
 
 on:
   schedule:
@@ -14,31 +14,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: Test Supabase CLI with npx
+      - name: Install PostgreSQL client
         run: |
-          npx supabase@latest --version
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Login to Supabase
+      - name: Create database backup using pg_dump
         run: |
-          echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | npx supabase@latest login --token
-
-      - name: Test Supabase connection
-        run: |
-          echo "Verificando conexión con Supabase..."
-          npx supabase@latest projects list
-
-      - name: Create database backup
-        run: |
-          echo "Iniciando backup..."
-          npx supabase@latest db dump \
-            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
-            --db-url ${{ secrets.SUPABASE_DB_URL }} \
-            --file backup_$(date +%Y%m%d_%H%M%S).sql
+          echo "Iniciando backup directo con pg_dump..."
+          pg_dump "${{ secrets.SUPABASE_DB_URL }}" > backup_$(date +%Y%m%d_%H%M%S).sql
           echo "Backup completado. Comprimiendo archivo..."
           gzip backup_*.sql
           ls -la backup_*
@@ -57,10 +41,10 @@ jobs:
           name: Database Backup $(date +%Y-%m-%d)
           files: backup_*.sql.gz.gpg
           body: |
-            Backup automático de base de datos
+            Backup automático de base de datos (PostgreSQL directo)
             Fecha: $(date)
             Run: ${{ github.run_number }}
-            Tablas incluidas: doctors, admins, prescriptions
+            Método: pg_dump directo
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
