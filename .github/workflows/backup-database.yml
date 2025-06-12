@@ -14,16 +14,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
       - name: Install Supabase CLI
         run: |
-          # Usar npm para instalar el CLI de Supabase (método más confiable)
-          npm install -g supabase
-          supabase --version # Verificar instalación
+          # Descargar el archivo tar.gz correcto
+          wget -O supabase.tar.gz https://github.com/supabase/cli/releases/download/v1.168.0/supabase_1.168.0_linux_amd64.tar.gz
+          tar -xzf supabase.tar.gz
+          chmod +x supabase
+          sudo mv supabase /usr/local/bin/supabase
+          supabase --version
 
       - name: Login to Supabase
         run: |
@@ -44,7 +42,7 @@ jobs:
           echo "Backup completado. Comprimiendo archivo..."
           gzip backup_*.sql
           echo "Compresión lista."
-          ls -la # Verificar archivo
+          ls -la backup_*
 
       - name: Encrypt backup
         run: |
@@ -52,35 +50,33 @@ jobs:
           gpg --symmetric --cipher-algo AES256 --compress-algo 1 --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65536 --quiet --batch --passphrase "${{ secrets.BACKUP_ENCRYPTION_KEY }}" backup_*.sql.gz
           rm backup_*.sql.gz
           echo "Backup encriptado correctamente."
-          ls -la # Verificar archivo
+          ls -la backup_*
 
       - name: Upload backup to release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: backup-$(date +%Y%m%d)
+          tag_name: backup-$(date +%Y%m%d-%H%M%S)
           name: Database Backup $(date +%Y-%m-%d)
           files: backup_*.sql.gz.gpg
           body: |
             Backup automático de base de datos
             Fecha: $(date)
-            Tablas incluidas: doctors, patients, medical_histories, consultations, prescriptions
+            Tablas incluidas: doctors, admins, prescriptions
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install GitHub CLI
+      - name: Cleanup old backups
         run: |
-          # Instalar GitHub CLI para limpiar backups antiguos
-          type -p curl >/dev/null || apt install curl -y
+          echo "Limpiando backups antiguos..."
+          # Instalar GitHub CLI
           curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
           sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
           sudo apt update
           sudo apt install gh -y
 
-      - name: Cleanup old backups
-        run: |
-          echo "Limpiando backups antiguos..."
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          # Autenticar y limpiar
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
           gh release list --limit 50 | grep "backup-" | tail -n +31 | awk '{print $1}' | xargs -I {} gh release delete {} --yes || true
 
 # # .github/workflows/backup-database.yml
