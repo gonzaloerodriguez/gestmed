@@ -1,27 +1,20 @@
-name: Daily Database Backup
+name: Daily Database Backup (Docker)
 
 on:
   schedule:
-    - cron: "0 2 * * *" # Todos los días a las 2:00 AM UTC
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    container:
+      image: supabase/cli:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install Supabase CLI
-        run: |
-          # Descargar el archivo tar.gz correcto
-          wget -O supabase.tar.gz https://github.com/supabase/cli/releases/download/v1.168.0/supabase_1.168.0_linux_amd64.tar.gz
-          tar -xzf supabase.tar.gz
-          chmod +x supabase
-          sudo mv supabase /usr/local/bin/supabase
-          supabase --version
 
       - name: Login to Supabase
         run: |
@@ -41,15 +34,19 @@ jobs:
             --file backup_$(date +%Y%m%d_%H%M%S).sql
           echo "Backup completado. Comprimiendo archivo..."
           gzip backup_*.sql
-          echo "Compresión lista."
           ls -la backup_*
+
+      - name: Install GPG and GitHub CLI
+        run: |
+          apk add --no-cache gnupg curl
+          curl -fsSL https://github.com/cli/cli/releases/download/v2.40.1/gh_2.40.1_linux_amd64.tar.gz | tar -xz
+          mv gh_2.40.1_linux_amd64/bin/gh /usr/local/bin/
 
       - name: Encrypt backup
         run: |
           echo "Encriptando backup..."
           gpg --symmetric --cipher-algo AES256 --compress-algo 1 --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65536 --quiet --batch --passphrase "${{ secrets.BACKUP_ENCRYPTION_KEY }}" backup_*.sql.gz
           rm backup_*.sql.gz
-          echo "Backup encriptado correctamente."
           ls -la backup_*
 
       - name: Upload backup to release
@@ -67,15 +64,6 @@ jobs:
 
       - name: Cleanup old backups
         run: |
-          echo "Limpiando backups antiguos..."
-          # Instalar GitHub CLI
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install gh -y
-
-          # Autenticar y limpiar
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
           gh release list --limit 50 | grep "backup-" | tail -n +31 | awk '{print $1}' | xargs -I {} gh release delete {} --yes || true
 
