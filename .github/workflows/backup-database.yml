@@ -8,6 +8,7 @@ on:
 jobs:
   backup:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -28,15 +29,25 @@ jobs:
         run: |
           echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login --token
 
+      - name: Probar conexión a Supabase
+        run: |
+          echo "Verificando conexión con Supabase..."
+          supabase status --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
       - name: Create database backup
         run: |
-          supabase db dump --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --db-url ${{ secrets.SUPABASE_DB_URL }} > backup_$(date +%Y%m%d_%H%M%S).sql
+          echo "Iniciando backup..."
+          supabase db dump --debug --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --db-url ${{ secrets.SUPABASE_DB_URL }} > backup_$(date +%Y%m%d_%H%M%S).sql
+          echo "Backup completado. Comprimiendo archivo..."
           gzip backup_*.sql
+          echo "Compresión lista."
 
       - name: Encrypt backup
         run: |
+          echo "Encriptando backup..."
           gpg --symmetric --cipher-algo AES256 --compress-algo 1 --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65536 --quiet --batch --passphrase "${{ secrets.BACKUP_ENCRYPTION_KEY }}" backup_*.sql.gz
           rm backup_*.sql.gz
+          echo "Backup encriptado correctamente."
 
       - name: Upload backup to release
         uses: softprops/action-gh-release@v1
@@ -53,6 +64,7 @@ jobs:
 
       - name: Cleanup old backups
         run: |
+          echo "Limpiando backups antiguos..."
           gh release list --limit 50 | grep "backup-" | tail -n +31 | awk '{print $1}' | xargs -I {} gh release delete {} --yes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
