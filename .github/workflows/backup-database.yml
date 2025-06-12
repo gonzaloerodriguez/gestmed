@@ -43,26 +43,6 @@ jobs:
         run: |
           supabase login --token "$SUPABASE_ACCESS_TOKEN"
 
-      - name: Test network connectivity
-        run: |
-          echo "Verificando conectividad de red..."
-
-          # Extraer host de la URL
-          DB_HOST=$(echo "$SUPABASE_DB_URL" | sed -n 's/.*@$$[^:]*$$.*/\1/p')
-          echo "Host extraído: $DB_HOST"
-
-          # Verificar resolución DNS
-          echo "Verificando resolución DNS..."
-          nslookup $DB_HOST || echo "Error en resolución DNS"
-
-          # Verificar conectividad con ping (si está disponible)
-          echo "Verificando conectividad..."
-          ping -c 3 $DB_HOST || echo "Ping falló, pero esto es normal en algunos entornos"
-
-          # Verificar puerto 5432
-          echo "Verificando puerto 5432..."
-          nc -zv $DB_HOST 5432 || echo "No se pudo conectar al puerto 5432"
-
       - name: Create timestamp folder
         run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
