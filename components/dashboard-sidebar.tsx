@@ -111,7 +111,7 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center">
               <Stethoscope className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-bold text-gray-900">MediScript</h1>
+              <h1 className="text-xl font-bold text-gray-900">GestMed</h1>
             </div>
             <Button
               variant="ghost"
