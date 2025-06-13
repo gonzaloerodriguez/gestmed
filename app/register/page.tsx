@@ -40,13 +40,6 @@ export default function RegisterPage() {
   });
   const [document, setDocument] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  /* const MAX_FILE_SIZE_MB = 5;
-  const ALLOWED_TYPES = [
-    "application/pdf",
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-  ]; */
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -60,26 +53,6 @@ export default function RegisterPage() {
       setDocument(e.target.files[0]);
     }
   };
-
-  /* const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    if (!ALLOWED_TYPES.includes(selectedFile.type)) {
-      alert(
-        "Formato de archivo no permitido. Solo se aceptan PDF, JPG, JPEG o PNG."
-      );
-      return;
-    }
-
-    const fileSizeMB = selectedFile.size / (1024 * 1024); // Convertir a MB
-    if (fileSizeMB > MAX_FILE_SIZE_MB) {
-      alert(`El archivo supera el tamaño máximo de ${MAX_FILE_SIZE_MB} MB.`);
-      return;
-    }
-
-    setDocument(selectedFile);
-  }; */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,22 +76,6 @@ export default function RegisterPage() {
       if (authData.user) {
         let documentUrl = null;
 
-        // Subir documento si existe
-        /* if (document) {
-          const fileExt = document.name.split(".").pop();
-          const fileName = `${authData.user.id}/document.${fileExt}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("documents")
-            .upload(fileName, document);
-
-          if (!uploadError) {
-            const { data } = supabase.storage
-              .from("documents")
-              .getPublicUrl(fileName);
-            documentUrl = data.publicUrl;
-          }
-        } */
         if (document) {
           const formDataDoc = new FormData();
           formDataDoc.append("file", document);

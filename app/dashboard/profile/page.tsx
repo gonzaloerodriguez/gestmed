@@ -159,27 +159,7 @@ export default function ProfilePage() {
       console.log(file);
     }
   };
-  /* 
-  const uploadFile = async (file: File, folder: string, publicId: string) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", folder);
-    formData.append("publicId", publicId);
 
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Upload failed");
-    }
-
-    const result = await response.json();
-    return result.url;
-  };
- */
   const uploadFile = async (
     file: File,
     folder: string,
@@ -211,30 +191,6 @@ export default function ProfilePage() {
     return result.url;
   };
 
-  /*  const uploadFile = async (
-    file: File,
-    folder: string, // este debe ser auth.uid()
-    userId: string // nombre del archivo, ej: doctor_{uid}_document.pdf
-  ): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", folder);
-    formData.append("userId", userId);
-
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Upload failed");
-    }
-
-    const result = await response.json();
-    return result.url;
-  };
-*/
   const deleteFile = async (publicId: string) => {
     const response = await fetch("/api/delete-file", {
       method: "DELETE",
@@ -248,13 +204,6 @@ export default function ProfilePage() {
       const error = await response.json();
       throw new Error(error.error || "Delete failed");
     }
-  };
-
-  const getPublicIdFromUrl = (url: string): string => {
-    // Extraer public_id de URL de Cloudinary
-    const parts = url.split("/");
-    const lastPart = parts[parts.length - 1];
-    return lastPart.split(".")[0];
   };
 
   const savePersonalData = async () => {
@@ -323,37 +272,6 @@ export default function ProfilePage() {
     }
   };
 
-  /*  const saveDocument = async () => {
-    if (!doctor || !documentFile) return;
-
-    setSaving(true);
-    try {
-      // Subir nuevo documento
-      // const documentUrl = await uploadFile(documentFile, "documents", `doctor_${doctor.id}_document`)
-      const documentUrl = await uploadFile(
-        documentFile,
-        doctor.id,
-        `doctor_${doctor.id}_document`
-      );
-      console.log(doctor.id);
-
-      // Actualizar base de datos
-      const { error } = await supabase
-        .from("doctors")
-        .update({ document_url: documentUrl })
-        .eq("id", doctor.id);
-
-      if (error) throw error;
-
-      alert("Documento actualizado correctamente");
-      loadProfile();
-      setDocumentFile(null);
-    } catch (error: any) {
-      alert("Error al subir documento: " + error.message);
-    } finally {
-      setSaving(false);
-    }
-  }; */
   const saveDocument = async () => {
     if (!doctor || !documentFile) return;
 
@@ -390,47 +308,6 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
-  /* const saveDocument = async () => {
-    if (!doctor || !documentFile) return;
-
-    setSaving(true);
-    try {
-      // Obtener el usuario autenticado
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) throw new Error("Usuario no autenticado");
-      const uid = user.id;
-
-      // Crear nombre del archivo
-      const fileName = `doctor_${uid}_document.pdf`;
-      console.log(user.id);
-      console.log(fileName);
-      console.log(documentFile);
-
-      // Subir el archivo al bucket en carpeta del usuario
-      const documentUrl = await uploadFile(documentFile, user.id, fileName);
-
-      // Actualizar base de datos
-      const { error: updateError } = await supabase
-        .from("doctors")
-        .update({ document_url: documentUrl })
-        .eq("id", doctor.id);
-
-      if (updateError) throw updateError;
-
-      alert("Documento actualizado correctamente");
-      loadProfile();
-      setDocumentFile(null);
-    } catch (error: any) {
-      alert("Error al subir documento: " + error.message);
-    } finally {
-      setSaving(false);
-    }
-  };
- */
 
   const deleteDocument = async () => {
     if (!doctor?.document_url) return;
