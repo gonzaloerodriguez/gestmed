@@ -25,6 +25,11 @@ export interface Doctor {
   is_active: boolean
   created_at: string
   updated_at: string
+  subscription_status?: "active" | "pending_verification" | "expired"
+  last_payment_date?: string
+  next_payment_date?: string
+  payment_proof_url?: string
+  preferred_theme?: string
 }
 
 export interface Prescription {
@@ -46,6 +51,7 @@ export interface Prescription {
   created_at: string
   updated_at: string
   doctor?: Doctor
+   patient_id?: string
 }
 
 
@@ -84,6 +90,8 @@ export type Patient = {
   is_active: boolean
   created_at: string
   updated_at: string
+    email?: string
+  gender?: "male" | "female"
 }
 
 export type PatientRepresentative = {
@@ -98,6 +106,13 @@ export type PatientRepresentative = {
   is_primary: boolean
   created_at: string
   updated_at: string
+}
+
+export interface ExemptedUser {
+  id: string
+  email: string
+  created_by: string
+  created_at: string
 }
 
 export type MedicalHistory = {
@@ -157,3 +172,11 @@ export type MedicalHistoryComplete = MedicalHistory & {
   prescriptions?: Prescription[]
 }
 
+export type PatientForSelector = {
+  id: string
+  full_name: string
+  cedula: string
+  phone?: string
+  email?: string
+  medical_history_id?: string
+}

@@ -160,10 +160,10 @@ export default function PrescriptionDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando receta...</p>
+          <p className="mt-4 text-muted-foreground">Cargando receta...</p>
         </div>
       </div>
     );
@@ -171,7 +171,7 @@ export default function PrescriptionDetailPage({
 
   if (!prescription || !doctor) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600">Receta no encontrada</p>
           <Button
@@ -186,9 +186,9 @@ export default function PrescriptionDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center">
@@ -201,10 +201,10 @@ export default function PrescriptionDetailPage({
                 Volver
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-foreground">
                   Detalle de Receta
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Paciente: {prescription.patient_name}
                 </p>
               </div>
@@ -260,24 +260,26 @@ export default function PrescriptionDetailPage({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Médico</p>
+                  <p className="text-sm text-muted-foreground">Médico</p>
                   <p className="font-medium">
                     {doctor.gender === "female" ? "Dra." : "Dr."}{" "}
                     {doctor.full_name}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Matrícula</p>
+                  <p className="text-sm text-muted-foreground">Matrícula</p>
                   <p className="font-medium">{doctor.license_number}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Especialidad</p>
+                  <p className="text-sm text-muted-foreground">Especialidad</p>
                   <p className="font-medium">
                     {doctor.specialty || "Médico General"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Fecha de Prescripción</p>
+                  <p className="text-sm text-muted-foreground">
+                    Fecha de Prescripción
+                  </p>
                   <p className="font-medium flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     {new Date(prescription.date_prescribed).toLocaleDateString(
@@ -306,12 +308,14 @@ export default function PrescriptionDetailPage({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Nombre Completo</p>
+                  <p className="text-sm text-muted-foreground">
+                    Nombre Completo
+                  </p>
                   <p className="font-medium">{prescription.patient_name}</p>
                 </div>
                 {prescription.patient_age && (
                   <div>
-                    <p className="text-sm text-gray-600">Edad</p>
+                    <p className="text-sm text-muted-foreground">Edad</p>
                     <p className="font-medium">
                       {prescription.patient_age} años
                     </p>
@@ -319,13 +323,15 @@ export default function PrescriptionDetailPage({
                 )}
                 {prescription.patient_cedula && (
                   <div>
-                    <p className="text-sm text-gray-600">Cédula de Identidad</p>
+                    <p className="text-sm text-muted-foreground">
+                      Cédula de Identidad
+                    </p>
                     <p className="font-medium">{prescription.patient_cedula}</p>
                   </div>
                 )}
                 {prescription.patient_phone && (
                   <div>
-                    <p className="text-sm text-gray-600">Teléfono</p>
+                    <p className="text-sm text-muted-foreground">Teléfono</p>
                     <p className="font-medium flex items-center">
                       <Phone className="h-4 w-4 mr-1" />
                       {prescription.patient_phone}
@@ -335,7 +341,7 @@ export default function PrescriptionDetailPage({
               </div>
               {prescription.patient_address && (
                 <div className="mt-4">
-                  <p className="text-sm text-gray-600">Dirección</p>
+                  <p className="text-sm text-muted-foreground">Dirección</p>
                   <p className="font-medium flex items-center">
                     <MapPin className="h-4 w-4 mr-1" />
                     {prescription.patient_address}
@@ -389,7 +395,7 @@ export default function PrescriptionDetailPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-background p-4 rounded-lg">
                 <p className="whitespace-pre-wrap font-mono text-sm">
                   {prescription.medications}
                 </p>
@@ -417,7 +423,7 @@ export default function PrescriptionDetailPage({
           {/* Información de Creación */}
           <Card>
             <CardContent className="pt-6">
-              <div className="flex justify-between items-center text-sm text-gray-600">
+              <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>
                   Creada el{" "}
                   {new Date(prescription.created_at).toLocaleDateString(

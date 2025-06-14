@@ -198,7 +198,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando dashboard...</p>
+          <p className="mt-4 text-muted-foreground">Cargando dashboard...</p>
         </div>
       </div>
     );
@@ -208,11 +208,13 @@ export default function DashboardPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-foreground">
           Bienvenido, {doctor?.gender === "female" ? "Dra." : "Dr."}{" "}
           {doctor?.full_name}
         </h1>
-        <p className="text-gray-600 mt-2">Resumen de tu actividad médica</p>
+        <p className="text-muted-foreground mt-2">
+          Resumen de tu actividad médica
+        </p>
       </div>
 
       {/* Estadísticas */}
@@ -222,7 +224,7 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm font-medium text-muted-foreground">
                   Total Pacientes
                 </p>
                 <p className="text-2xl font-bold">{stats.totalPatients}</p>
@@ -236,7 +238,7 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <UserCheck className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm font-medium text-muted-foreground">
                   Menores de Edad
                 </p>
                 <p className="text-2xl font-bold">{stats.minorPatients}</p>
@@ -250,7 +252,7 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <Stethoscope className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm font-medium text-muted-foreground">
                   Consultas Hoy
                 </p>
                 <p className="text-2xl font-bold">{stats.consultationsToday}</p>
@@ -264,7 +266,9 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <Activity className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Esta Semana</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Esta Semana
+                </p>
                 <p className="text-2xl font-bold">
                   {stats.consultationsThisWeek}
                 </p>
@@ -306,12 +310,12 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={patient.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-background"
                   >
                     <div className="flex items-center">
                       <div>
                         <p className="font-medium">{patient.full_name}</p>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           {patient.cedula && <span>CI: {patient.cedula}</span>}
                           {age !== null && (
                             <span className="flex items-center">
@@ -350,7 +354,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Users className="h-6 w-6 text-gray-600 mr-2" />
+              <Users className="h-6 w-6 text-muted-foreground mr-2" />
               Pacientes Recientes
             </CardTitle>
             <CardDescription>Últimos 5 pacientes registrados</CardDescription>
@@ -359,7 +363,7 @@ export default function DashboardPage() {
             {recentPatients.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   No hay pacientes registrados aún
                 </p>
                 <Link href="/dashboard/patients?action=new">
@@ -384,7 +388,7 @@ export default function DashboardPage() {
                     >
                       <div>
                         <h3 className="font-medium">{patient.full_name}</h3>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>
                             {new Date(patient.created_at).toLocaleDateString(
@@ -427,7 +431,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Stethoscope className="h-6 w-6 text-gray-600 mr-2" />
+              <Stethoscope className="h-6 w-6 text-muted-foreground mr-2" />
               Consultas Recientes
             </CardTitle>
             <CardDescription>Últimas 5 consultas realizadas</CardDescription>
@@ -436,7 +440,7 @@ export default function DashboardPage() {
             {recentConsultations.length === 0 ? (
               <div className="text-center py-8">
                 <Stethoscope className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   No hay consultas registradas aún
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
@@ -456,7 +460,7 @@ export default function DashboardPage() {
                         {(consultation as any).medical_histories?.patients
                           ?.full_name || "Paciente"}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-1">
+                      <p className="text-sm text-muted-foreground mb-1">
                         {consultation.reason_for_visit}
                       </p>
                       <div className="flex items-center text-xs text-gray-500">

@@ -1,23 +1,29 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Save } from "lucide-react"
-import { supabase, type Doctor, type MedicationType } from "@/lib/supabase"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Save } from "lucide-react";
+import { supabase, type Doctor, type MedicationType } from "@/lib/supabase";
 
 export default function NewPrescriptionPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [doctor, setDoctor] = useState<Doctor | null>(null)
-  const [medicationTypes, setMedicationTypes] = useState<MedicationType[]>([])
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [medicationTypes, setMedicationTypes] = useState<MedicationType[]>([]);
 
   const [formData, setFormData] = useState({
     patient_name: "",
@@ -30,21 +36,21 @@ export default function NewPrescriptionPage() {
     instructions: "",
     notes: "",
     date_prescribed: new Date().toISOString().split("T")[0], // Fecha actual
-  })
+  });
 
   useEffect(() => {
-    checkUserAndLoadData()
-  }, [])
+    checkUserAndLoadData();
+  }, []);
 
   const checkUserAndLoadData = async () => {
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push("/login")
-        return
+        router.push("/login");
+        return;
       }
 
       // Cargar datos del médico
@@ -52,57 +58,59 @@ export default function NewPrescriptionPage() {
         .from("doctors")
         .select("*")
         .eq("id", user.id)
-        .single()
+        .single();
 
-      if (doctorError) throw doctorError
-      setDoctor(doctorData)
+      if (doctorError) throw doctorError;
+      setDoctor(doctorData);
 
       // Cargar tipos de medicamentos
       const { data: medicationData, error: medicationError } = await supabase
         .from("medication_types")
         .select("*")
-        .order("name")
+        .order("name");
 
-      if (medicationError) throw medicationError
-      setMedicationTypes(medicationData || [])
+      if (medicationError) throw medicationError;
+      setMedicationTypes(medicationData || []);
     } catch (error: any) {
-      console.error("Error:", error.message)
-      router.push("/dashboard")
+      console.error("Error:", error.message);
+      router.push("/dashboard");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!doctor) return
+    e.preventDefault();
+    if (!doctor) return;
 
     // Validaciones básicas
     if (!formData.patient_name.trim()) {
-      alert("El nombre del paciente es obligatorio")
-      return
+      alert("El nombre del paciente es obligatorio");
+      return;
     }
 
     if (!formData.medications.trim()) {
-      alert("Los medicamentos son obligatorios")
-      return
+      alert("Los medicamentos son obligatorios");
+      return;
     }
 
     if (!formData.instructions.trim()) {
-      alert("Las instrucciones son obligatorias")
-      return
+      alert("Las instrucciones son obligatorias");
+      return;
     }
 
-    setSaving(true)
+    setSaving(true);
     try {
       const prescriptionData = {
         doctor_id: doctor.id,
         patient_name: formData.patient_name.trim(),
-        patient_age: formData.patient_age ? Number.parseInt(formData.patient_age) : null,
+        patient_age: formData.patient_age
+          ? Number.parseInt(formData.patient_age)
+          : null,
         patient_cedula: formData.patient_cedula.trim() || null,
         patient_phone: formData.patient_phone.trim() || null,
         patient_address: formData.patient_address.trim() || null,
@@ -111,35 +119,39 @@ export default function NewPrescriptionPage() {
         instructions: formData.instructions.trim(),
         notes: formData.notes.trim() || null,
         date_prescribed: formData.date_prescribed,
-      }
+      };
 
-      const { data, error } = await supabase.from("prescriptions").insert(prescriptionData).select().single()
+      const { data, error } = await supabase
+        .from("prescriptions")
+        .insert(prescriptionData)
+        .select()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
-      alert("Receta creada exitosamente")
-      router.push(`/dashboard/prescriptions/${data.id}`)
+      alert("Receta creada exitosamente");
+      router.push(`/dashboard/prescriptions/${data.id}`);
     } catch (error: any) {
-      alert("Error al crear receta: " + error.message)
+      alert("Error al crear receta: " + error.message);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando formulario...</p>
+          <p className="mt-4 text-muted-foreground">Cargando formulario...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!doctor) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600">Error al cargar datos del médico</p>
           <Button onClick={() => router.push("/dashboard")} className="mt-4">
@@ -147,23 +159,31 @@ export default function NewPrescriptionPage() {
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center">
-              <Button variant="ghost" onClick={() => router.push("/dashboard/prescriptions")} className="mr-4">
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/dashboard/prescriptions")}
+                className="mr-4"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Volver
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Nueva Receta</h1>
-                <p className="text-gray-600">Crear una nueva receta médica</p>
+                <h1 className="text-2xl font-bold text-foreground">
+                  Nueva Receta
+                </h1>
+                <p className="text-muted-foreground">
+                  Crear una nueva receta médica
+                </p>
               </div>
             </div>
           </div>
@@ -177,34 +197,48 @@ export default function NewPrescriptionPage() {
           <Card>
             <CardHeader>
               <CardTitle>Información del Médico</CardTitle>
-              <CardDescription>Datos que aparecerán en la receta</CardDescription>
+              <CardDescription>
+                Datos que aparecerán en la receta
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Médico</Label>
                   <Input
-                    value={`${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`}
+                    value={`${doctor.gender === "female" ? "Dra." : "Dr."} ${
+                      doctor.full_name
+                    }`}
                     disabled
-                    className="bg-gray-50"
+                    className="bg-background"
                   />
                 </div>
                 <div>
                   <Label>Matrícula</Label>
-                  <Input value={doctor.license_number} disabled className="bg-gray-50" />
+                  <Input
+                    value={doctor.license_number}
+                    disabled
+                    className="bg-background"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Especialidad</Label>
-                  <Input value={doctor.specialty || "Médico General"} disabled className="bg-gray-50" />
+                  <Input
+                    value={doctor.specialty || "Médico General"}
+                    disabled
+                    className="bg-background"
+                  />
                 </div>
                 <div>
                   <Label>Fecha de Prescripción</Label>
                   <Input
                     type="date"
                     value={formData.date_prescribed}
-                    onChange={(e) => handleInputChange("date_prescribed", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("date_prescribed", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -216,7 +250,9 @@ export default function NewPrescriptionPage() {
           <Card>
             <CardHeader>
               <CardTitle>Información del Paciente</CardTitle>
-              <CardDescription>Datos del paciente para la receta</CardDescription>
+              <CardDescription>
+                Datos del paciente para la receta
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,7 +261,9 @@ export default function NewPrescriptionPage() {
                   <Input
                     id="patient_name"
                     value={formData.patient_name}
-                    onChange={(e) => handleInputChange("patient_name", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("patient_name", e.target.value)
+                    }
                     placeholder="Nombre completo del paciente"
                     required
                   />
@@ -238,7 +276,9 @@ export default function NewPrescriptionPage() {
                     min="0"
                     max="150"
                     value={formData.patient_age}
-                    onChange={(e) => handleInputChange("patient_age", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("patient_age", e.target.value)
+                    }
                     placeholder="Edad del paciente"
                   />
                 </div>
@@ -250,7 +290,9 @@ export default function NewPrescriptionPage() {
                   <Input
                     id="patient_cedula"
                     value={formData.patient_cedula}
-                    onChange={(e) => handleInputChange("patient_cedula", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("patient_cedula", e.target.value)
+                    }
                     placeholder="Cédula del paciente"
                   />
                 </div>
@@ -259,7 +301,9 @@ export default function NewPrescriptionPage() {
                   <Input
                     id="patient_phone"
                     value={formData.patient_phone}
-                    onChange={(e) => handleInputChange("patient_phone", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("patient_phone", e.target.value)
+                    }
                     placeholder="Teléfono del paciente"
                   />
                 </div>
@@ -270,7 +314,9 @@ export default function NewPrescriptionPage() {
                 <Input
                   id="patient_address"
                   value={formData.patient_address}
-                  onChange={(e) => handleInputChange("patient_address", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("patient_address", e.target.value)
+                  }
                   placeholder="Dirección del paciente"
                 />
               </div>
@@ -289,7 +335,9 @@ export default function NewPrescriptionPage() {
                 <Textarea
                   id="diagnosis"
                   value={formData.diagnosis}
-                  onChange={(e) => handleInputChange("diagnosis", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("diagnosis", e.target.value)
+                  }
                   placeholder="Diagnóstico del paciente"
                   rows={3}
                 />
@@ -300,7 +348,9 @@ export default function NewPrescriptionPage() {
                 <Textarea
                   id="medications"
                   value={formData.medications}
-                  onChange={(e) => handleInputChange("medications", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("medications", e.target.value)
+                  }
                   placeholder="Lista de medicamentos prescritos&#10;Ejemplo:&#10;- Paracetamol 500mg - 1 tableta cada 8 horas&#10;- Ibuprofeno 400mg - 1 tableta cada 12 horas"
                   rows={6}
                   required
@@ -312,7 +362,9 @@ export default function NewPrescriptionPage() {
                 <Textarea
                   id="instructions"
                   value={formData.instructions}
-                  onChange={(e) => handleInputChange("instructions", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("instructions", e.target.value)
+                  }
                   placeholder="Instrucciones para el paciente&#10;Ejemplo:&#10;- Tomar con alimentos&#10;- Completar todo el tratamiento&#10;- Regresar en 7 días para control"
                   rows={4}
                   required
@@ -350,5 +402,5 @@ export default function NewPrescriptionPage() {
         </form>
       </main>
     </div>
-  )
+  );
 }
