@@ -143,7 +143,6 @@ export default function AdminDashboardPage() {
 
   const loadAdminData = async () => {
     try {
-      // Cargar datos del admin
       const { data: adminData, error: adminError } = await supabase
         .from("admins")
         .select("*")
@@ -153,7 +152,6 @@ export default function AdminDashboardPage() {
       if (adminError) throw adminError;
       setAdmin(adminData);
 
-      // Cargar médicos
       await loadDoctors();
       await loadStats();
       await loadConsultationStats();
@@ -355,27 +353,16 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const openActionDialog = (
-    doctor: Doctor,
-    action: "activate" | "deactivate"
-  ) => {
-    setSelectedDoctor(doctor);
-    setActionType(action);
-    setActionDialogOpen(true);
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
   };
 
-  // Datos para el gráfico de pie de médicos
   const doctorStatusData = [
     { name: "Activos", value: stats.activeDoctors, color: "#10b981" },
     { name: "Inactivos", value: stats.inactiveDoctors, color: "#ef4444" },
   ];
 
-  // Mostrar loading mientras se verifica autenticación
   if (authLoading) {
     return (
       <div className="min-h-screen bg-foreground flex items-center justify-center">
@@ -404,7 +391,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
@@ -439,9 +425,7 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -506,9 +490,7 @@ export default function AdminDashboardPage() {
           </Card>
         </div>
 
-        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Consultas por día */}
           <Card>
             <CardHeader>
               <CardTitle>Consultas Diarias (Última Semana)</CardTitle>
@@ -542,7 +524,6 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Estado de médicos */}
           <Card>
             <CardHeader>
               <CardTitle>Estado de Médicos</CardTitle>
@@ -583,7 +564,6 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Tendencia mensual */}
           <Card>
             <CardHeader>
               <CardTitle>Tendencia de Consultas</CardTitle>
@@ -616,7 +596,6 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Top médicos por consultas */}
           <Card>
             <CardHeader>
               <CardTitle>Top Médicos por Consultas</CardTitle>
@@ -656,345 +635,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/navigation";
-// import Link from "next/link";
-// import { Button } from "@/components/ui/button";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "@/components/ui/card";
-// import { Input } from "@/components/ui/input";
-// import { Badge } from "@/components/ui/badge";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
-// import {
-//   AlertDialog,
-//   AlertDialogAction,
-//   AlertDialogCancel,
-//   AlertDialogContent,
-//   AlertDialogDescription,
-//   AlertDialogFooter,
-//   AlertDialogHeader,
-//   AlertDialogTitle,
-// } from "@/components/ui/alert-dialog";
-// import {
-//   Users,
-//   Search,
-//   MoreVertical,
-//   Eye,
-//   UserCheck,
-//   UserX,
-//   Shield,
-//   LogOut,
-//   FileText,
-//   Activity,
-//   UserPlus,
-// } from "lucide-react";
-// import { supabase, type Doctor, type Admin } from "@/lib/supabase";
-// import { useAuthGuard } from "@/lib/auth-guard";
-
-// export default function AdminDashboardPage() {
-//   const router = useRouter();
-//   const { loading: authLoading, user } = useAuthGuard("admin");
-//   const [admin, setAdmin] = useState<Admin | null>(null);
-//   const [doctors, setDoctors] = useState<Doctor[]>([]);
-//   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [actionDialogOpen, setActionDialogOpen] = useState(false);
-//   const [actionType, setActionType] = useState<
-//     "activate" | "deactivate" | null
-//   >(null);
-//   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-//   const [stats, setStats] = useState({
-//     totalDoctors: 0,
-//     activeDoctors: 0,
-//     inactiveDoctors: 0,
-//     totalPrescriptions: 0,
-//   });
-
-//   useEffect(() => {
-//     if (user && !authLoading) {
-//       loadAdminData();
-//     }
-//   }, [user, authLoading]);
-
-//   useEffect(() => {
-//     // Filtrar médicos cuando cambie el término de búsqueda
-//     if (searchTerm.trim() === "") {
-//       setFilteredDoctors(doctors);
-//     } else {
-//       const filtered = doctors.filter(
-//         (doctor) =>
-//           doctor.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//           doctor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//           doctor.license_number
-//             .toLowerCase()
-//             .includes(searchTerm.toLowerCase()) ||
-//           doctor.specialty?.toLowerCase().includes(searchTerm.toLowerCase())
-//       );
-//       setFilteredDoctors(filtered);
-//     }
-//   }, [searchTerm, doctors]);
-
-//   const loadAdminData = async () => {
-//     try {
-//       // Cargar datos del admin
-//       const { data: adminData, error: adminError } = await supabase
-//         .from("admins")
-//         .select("*")
-//         .eq("id", user.id)
-//         .single();
-
-//       if (adminError) throw adminError;
-//       setAdmin(adminData);
-
-//       // Cargar médicos
-//       await loadDoctors();
-//       await loadStats();
-//     } catch (error: any) {
-//       console.error("Error:", error.message);
-//     }
-//   };
-
-//   const loadDoctors = async () => {
-//     try {
-//       const { data, error } = await supabase
-//         .from("doctors")
-//         .select("*")
-//         .order("created_at", { ascending: false });
-
-//       if (error) throw error;
-
-//       setDoctors(data || []);
-//       setFilteredDoctors(data || []);
-//     } catch (error: any) {
-//       console.error("Error loading doctors:", error.message);
-//     }
-//   };
-
-//   const loadStats = async () => {
-//     try {
-//       // Contar médicos
-//       const { count: totalDoctors } = await supabase
-//         .from("doctors")
-//         .select("*", { count: "exact", head: true });
-
-//       const { count: activeDoctors } = await supabase
-//         .from("doctors")
-//         .select("*", { count: "exact", head: true })
-//         .eq("is_active", true);
-
-//       const { count: inactiveDoctors } = await supabase
-//         .from("doctors")
-//         .select("*", { count: "exact", head: true })
-//         .eq("is_active", false);
-
-//       // Contar recetas
-//       const { count: totalPrescriptions } = await supabase
-//         .from("prescriptions")
-//         .select("*", { count: "exact", head: true })
-//         .eq("is_active", true);
-
-//       setStats({
-//         totalDoctors: totalDoctors || 0,
-//         activeDoctors: activeDoctors || 0,
-//         inactiveDoctors: inactiveDoctors || 0,
-//         totalPrescriptions: totalPrescriptions || 0,
-//       });
-//     } catch (error: any) {
-//       console.error("Error loading stats:", error.message);
-//     }
-//   };
-
-//   const handleDoctorAction = async () => {
-//     if (!selectedDoctor || !actionType) return;
-
-//     try {
-//       const newStatus = actionType === "activate";
-
-//       const { error } = await supabase
-//         .from("doctors")
-//         .update({ is_active: newStatus })
-//         .eq("id", selectedDoctor.id);
-
-//       if (error) throw error;
-
-//       // Actualizar lista local
-//       setDoctors((prev) =>
-//         prev.map((doctor) =>
-//           doctor.id === selectedDoctor.id
-//             ? { ...doctor, is_active: newStatus }
-//             : doctor
-//         )
-//       );
-
-//       setActionDialogOpen(false);
-//       setSelectedDoctor(null);
-//       setActionType(null);
-
-//       // Recargar estadísticas
-//       await loadStats();
-//     } catch (error: any) {
-//       alert("Error al actualizar médico: " + error.message);
-//     }
-//   };
-
-//   const openActionDialog = (
-//     doctor: Doctor,
-//     action: "activate" | "deactivate"
-//   ) => {
-//     setSelectedDoctor(doctor);
-//     setActionType(action);
-//     setActionDialogOpen(true);
-//   };
-
-//   const handleLogout = async () => {
-//     await supabase.auth.signOut();
-//     router.push("/");
-//   };
-
-//   // Mostrar loading mientras se verifica autenticación
-//   if (authLoading) {
-//     return (
-//       <div className="min-h-screen bg-foreground flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-//           <p className="mt-4 text-gray-600">
-//             Cargando panel de administrador...
-//           </p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (!admin) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <p className="text-red-600">Acceso denegado</p>
-//           <Button onClick={() => router.push("/dashboard")} className="mt-4">
-//             Volver al Dashboard
-//           </Button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       {/* Header */}
-//       <header className="bg-white shadow-sm">
-//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//           <div className="flex items-center justify-between py-6">
-//             <div>
-//               <h1 className="text-2xl font-bold text-gray-900">
-//                 Panel de Administrador
-//               </h1>
-//               <p className="text-gray-600">
-//                 Gestión de usuarios médicos - {admin.full_name}
-//               </p>
-//             </div>
-//             <div className="flex items-center space-x-4">
-//               <Button
-//                 variant="outline"
-//                 size="sm"
-//                 onClick={() => router.push("/admin/exempted-users")}
-//                 className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-//               >
-//                 <Shield className="h-4 w-4 mr-2" />
-//                 Usuarios Exentos
-//               </Button>
-//               <Badge variant="secondary">
-//                 <Shield className="h-3 w-3 mr-1" />
-//                 {admin.is_super_admin ? "Super Admin" : "Admin"}
-//               </Badge>
-//               <Button variant="outline" size="sm" onClick={handleLogout}>
-//                 <LogOut className="h-4 w-4 mr-2" />
-//                 Cerrar Sesión
-//               </Button>
-//             </div>
-//           </div>
-//         </div>
-//       </header>
-
-//       {/* Main Content */}
-//       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-//         {/* Stats Cards */}
-//         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-//           <Card>
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium">
-//                 Total Médicos
-//               </CardTitle>
-//               <Users className="h-4 w-4 text-muted-foreground" />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold">{stats.totalDoctors}</div>
-//             </CardContent>
-//           </Card>
-
-//           <Card>
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium">
-//                 Médicos Activos
-//               </CardTitle>
-//               <Activity className="h-4 w-4 text-green-600" />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold text-green-600">
-//                 {stats.activeDoctors}
-//               </div>
-//             </CardContent>
-//           </Card>
-
-//           <Card>
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium">
-//                 Médicos Inactivos
-//               </CardTitle>
-//               <Activity className="h-4 w-4 text-red-600" />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold text-red-600">
-//                 {stats.inactiveDoctors}
-//               </div>
-//             </CardContent>
-//           </Card>
-
-//           <Card>
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium">
-//                 Total Recetas
-//               </CardTitle>
-//               <FileText className="h-4 w-4 text-muted-foreground" />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold">
-//                 {stats.totalPrescriptions}
-//               </div>
-//             </CardContent>
-//           </Card>
-//         </div>
-//       </main>
-//     </div>
-//   );
-// }

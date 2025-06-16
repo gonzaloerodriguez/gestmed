@@ -65,7 +65,6 @@ export default function ExemptedUsersPage() {
         return;
       }
 
-      // Verificar si es administrador
       const { data: adminData, error: adminError } = await supabase
         .from("admins")
         .select("*")
@@ -108,7 +107,6 @@ export default function ExemptedUsersPage() {
       return;
     }
 
-    // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail.trim())) {
       alert("Por favor ingresa un email válido");
@@ -128,7 +126,6 @@ export default function ExemptedUsersPage() {
 
       if (error) {
         if (error.code === "23505") {
-          // Unique constraint violation
           alert("Este email ya está en la lista de exentos");
         } else {
           throw error;
@@ -186,7 +183,6 @@ export default function ExemptedUsersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
@@ -218,9 +214,7 @@ export default function ExemptedUsersPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Add New Email */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Agregar Nuevo Email</CardTitle>
@@ -252,7 +246,6 @@ export default function ExemptedUsersPage() {
           </CardContent>
         </Card>
 
-        {/* Exempted Users List */}
         <Card>
           <CardHeader>
             <CardTitle>Lista de Usuarios Exentos</CardTitle>
@@ -317,7 +310,6 @@ export default function ExemptedUsersPage() {
         </Card>
       </main>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

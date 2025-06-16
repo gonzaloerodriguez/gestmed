@@ -13,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -67,7 +66,6 @@ export default function AdminProfilePage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
-  // Estados para formularios
   const [personalData, setPersonalData] = useState({
     full_name: "",
     email: "",
@@ -86,7 +84,9 @@ export default function AdminProfilePage() {
     darkMode: false,
   });
 
-  const [recentActivity, setRecentActivity] = useState<AdminActivity[]>([]);
+  const [recentActivity, setRecentActivity] = useState<AdminActivity[] | null>(
+    []
+  );
   const [preferencesAdmin, setPreferencesAdmin] = useState<any>(null);
 
   useEffect(() => {
@@ -129,7 +129,6 @@ export default function AdminProfilePage() {
     try {
       if (!user) return;
 
-      // Intentar cargar desde una tabla de logs si existe
       const { data: activityData, error } = await supabase
         .from("admin_activity_logs")
         .select("*")
@@ -137,13 +136,15 @@ export default function AdminProfilePage() {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      const formattedActivity = activityData.map((item) => ({
-        id: item.id,
-        action: item.action,
-        timestamp: item.created_at,
-        details: item.details || "",
-        ip_address: item.ip_address,
-      }));
+      const formattedActivity = activityData
+        ? activityData.map((item) => ({
+            id: item.id,
+            action: item.action,
+            timestamp: item.created_at,
+            details: item.details || "",
+            ip_address: item.ip_address,
+          }))
+        : null;
       setRecentActivity(formattedActivity);
     } catch (error: any) {
       console.error("Error loading activity:", error.message);
@@ -159,7 +160,7 @@ export default function AdminProfilePage() {
       const { data: adminPreferences, error } = await supabase
         .from("admin_preferences")
         .select("*")
-        .eq("admin_id", user.id) // Cambiar de "id" a "admin_id"
+        .eq("admin_id", user.id)
         .single();
 
       if (error) {
@@ -260,10 +261,8 @@ export default function AdminProfilePage() {
   const savePreferences = async () => {
     setSaving(true);
     try {
-      // Guardar preferencias en localStorage y opcionalmente en BD
       localStorage.setItem("admin-preferences", JSON.stringify(preferences));
 
-      // Si tienes una tabla de preferencias, guardar ahí también
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       alert("Preferencias guardadas correctamente");
@@ -279,7 +278,6 @@ export default function AdminProfilePage() {
 
     setExportLoading(true);
     try {
-      // Recopilar datos del admin
       const exportData = {
         admin_info: {
           id: admin.id,
@@ -295,7 +293,6 @@ export default function AdminProfilePage() {
         export_type: "admin_profile_data",
       };
 
-      // Crear y descargar archivo JSON
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
         type: "application/json",
       });
@@ -745,7 +742,6 @@ export default function AdminProfilePage() {
                 )}
               </TabsContent>
 
-              {/* Tab: Actividad */}
               <TabsContent value="activity">
                 <Card>
                   <CardHeader>
@@ -756,7 +752,7 @@ export default function AdminProfilePage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {recentActivity.map((activity) => (
+                      {recentActivity?.map((activity) => (
                         <div
                           key={activity.id}
                           className="flex items-start space-x-4 p-4 border rounded-lg"
@@ -794,10 +790,8 @@ export default function AdminProfilePage() {
                 </Card>
               </TabsContent>
 
-              {/* Tab: Configuración de Cuenta */}
               <TabsContent value="account">
                 <div className="space-y-6">
-                  {/* Exportar Datos */}
                   <Card>
                     <CardHeader>
                       <CardTitle>Exportar Datos</CardTitle>
@@ -829,7 +823,6 @@ export default function AdminProfilePage() {
                     </CardContent>
                   </Card>
 
-                  {/* Zona de Peligro */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-red-600">
@@ -871,7 +864,6 @@ export default function AdminProfilePage() {
         </div>
       </main>
 
-      {/* Delete Account Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

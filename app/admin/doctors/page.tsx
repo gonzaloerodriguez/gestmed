@@ -65,12 +65,6 @@ export default function AdminDashboardPage() {
     "activate" | "deactivate" | null
   >(null);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-  //   const [stats, setStats] = useState({
-  //     totalDoctors: 0,
-  //     activeDoctors: 0,
-  //     inactiveDoctors: 0,
-  //     totalPrescriptions: 0,
-  //   });
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -79,7 +73,6 @@ export default function AdminDashboardPage() {
   }, [user, authLoading]);
 
   useEffect(() => {
-    // Filtrar médicos cuando cambie el término de búsqueda
     if (searchTerm.trim() === "") {
       setFilteredDoctors(doctors);
     } else {
@@ -98,7 +91,6 @@ export default function AdminDashboardPage() {
 
   const loadAdminData = async () => {
     try {
-      // Cargar datos del admin
       const { data: adminData, error: adminError } = await supabase
         .from("admins")
         .select("*")
@@ -110,7 +102,6 @@ export default function AdminDashboardPage() {
 
       // Cargar médicos
       await loadDoctors();
-      //   await loadStats();
     } catch (error: any) {
       console.error("Error:", error.message);
     }
@@ -131,41 +122,6 @@ export default function AdminDashboardPage() {
       console.error("Error loading doctors:", error.message);
     }
   };
-
-  //   const loadStats = async () => {
-  //     try {
-  //       // Contar médicos
-  //       const { count: totalDoctors } = await supabase
-  //         .from("doctors")
-  //         .select("*", { count: "exact", head: true });
-
-  //       const { count: activeDoctors } = await supabase
-  //         .from("doctors")
-  //         .select("*", { count: "exact", head: true })
-  //         .eq("is_active", true);
-
-  //       const { count: inactiveDoctors } = await supabase
-  //         .from("doctors")
-  //         .select("*", { count: "exact", head: true })
-  //         .eq("is_active", false);
-
-  //       // Contar recetas
-  //       const { count: totalPrescriptions } = await supabase
-  //         .from("prescriptions")
-  //         .select("*", { count: "exact", head: true })
-  //         .eq("is_active", true);
-
-  //       setStats({
-  //         totalDoctors: totalDoctors || 0,
-  //         activeDoctors: activeDoctors || 0,
-  //         inactiveDoctors: inactiveDoctors || 0,
-  //         totalPrescriptions: totalPrescriptions || 0,
-  //         inactiveDoctors: inactiveDoctors || 0,
-  //       });
-  //     } catch (error: any) {
-  //       console.error("Error loading stats:", error.message);
-  //     }
-  //   };
 
   const handleDoctorAction = async () => {
     if (!selectedDoctor || !actionType) return;
@@ -192,9 +148,6 @@ export default function AdminDashboardPage() {
       setActionDialogOpen(false);
       setSelectedDoctor(null);
       setActionType(null);
-
-      // Recargar estadísticas
-      //   await loadStats();
     } catch (error: any) {
       alert("Error al actualizar médico: " + error.message);
     }
@@ -214,7 +167,6 @@ export default function AdminDashboardPage() {
     router.push("/");
   };
 
-  // Mostrar loading mientras se verifica autenticación
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -243,7 +195,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
@@ -278,88 +229,7 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Médicos
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalDoctors}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Médicos Activos
-              </CardTitle>
-              <Activity className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {stats.activeDoctors}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Médicos Inactivos
-              </CardTitle>
-              <Activity className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {stats.inactiveDoctors}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Recetas
-              </CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.totalPrescriptions}
-              </div>
-            </CardContent>
-          </Card>
-        </div> */}
-
-        {/* Quick Actions */}
-        {/* <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Acciones Rápidas</CardTitle>
-            <CardDescription>
-              Herramientas de administración adicionales
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => router.push("/admin/exempted-users")}
-                className="flex items-center space-x-2"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Gestionar Usuarios Exentos</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card> */}
-
-        {/* Search */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Buscar Médicos</CardTitle>
@@ -380,7 +250,6 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Doctors Table */}
         <Card>
           <CardHeader>
             <CardTitle>Lista de Médicos</CardTitle>
@@ -515,7 +384,7 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </main>
-      {/* Action Confirmation Dialog */}
+
       <AlertDialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
