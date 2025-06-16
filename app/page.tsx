@@ -1,7 +1,13 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Stethoscope, FileText, Shield, Download } from "lucide-react"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Stethoscope, FileText, Shield, Download } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -34,8 +40,9 @@ export default function HomePage() {
             <span className="text-blue-600"> Recetas Médicas</span>
           </h2>
           <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
-            Optimiza tu flujo de trabajo médico con nuestro sistema seguro y eficiente para crear, gestionar y descargar
-            recetas médicas digitales.
+            Optimiza tu flujo de trabajo médico con nuestro sistema seguro y
+            eficiente para crear, gestionar y descargar recetas médicas
+            digitales.
           </p>
           <div className="mt-10">
             <Link href="/register">
@@ -54,7 +61,10 @@ export default function HomePage() {
               <CardTitle>Recetas Digitales</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Crea recetas médicas con plantillas profesionales y personalizadas.</CardDescription>
+              <CardDescription>
+                Crea recetas médicas con plantillas profesionales y
+                personalizadas.
+              </CardDescription>
             </CardContent>
           </Card>
 
@@ -64,7 +74,10 @@ export default function HomePage() {
               <CardTitle>Seguro y Confiable</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Protección de datos médicos con los más altos estándares de seguridad.</CardDescription>
+              <CardDescription>
+                Protección de datos médicos con los más altos estándares de
+                seguridad.
+              </CardDescription>
             </CardContent>
           </Card>
 
@@ -74,7 +87,9 @@ export default function HomePage() {
               <CardTitle>Descarga PDF</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Genera y descarga recetas en formato PDF listas para imprimir.</CardDescription>
+              <CardDescription>
+                Genera y descarga recetas en formato PDF listas para imprimir.
+              </CardDescription>
             </CardContent>
           </Card>
 
@@ -84,11 +99,14 @@ export default function HomePage() {
               <CardTitle>Gestión Completa</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Administra tu perfil médico, firma digital y historial de recetas.</CardDescription>
+              <CardDescription>
+                Administra tu perfil médico, firma digital y historial de
+                recetas.
+              </CardDescription>
             </CardContent>
           </Card>
         </div>
       </main>
     </div>
-  )
+  );
 }

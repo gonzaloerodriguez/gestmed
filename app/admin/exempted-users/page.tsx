@@ -175,19 +175,19 @@ export default function ExemptedUsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <p className="mt-4 text-muted-foreground">Cargando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center">
@@ -200,17 +200,19 @@ export default function ExemptedUsersPage() {
                 Volver
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-foreground">
                   Usuarios Exentos de Pago
                 </h1>
-                <p className="text-gray-600">
-                  Gestiona los emails que no requieren pago al registrarse
+                <p className="text-muted-foreground">
+                  Gestiona los usuarios que no requieren pago al registrarse
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Shield className="h-5 w-5 text-blue-600" />
-              <span className="text-sm text-gray-600">{admin?.full_name}</span>
+              <span className="text-sm text-muted-foreground">
+                {admin?.full_name}
+              </span>
             </div>
           </div>
         </div>
@@ -264,11 +266,11 @@ export default function ExemptedUsersPage() {
             {exemptedUsers.length === 0 ? (
               <div className="text-center py-12">
                 <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No hay emails exentos
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  No hay usuarios exentos
                 </h3>
-                <p className="text-gray-600">
-                  Agrega emails que no requieran pago al registrarse
+                <p className="text-muted-foreground">
+                  Agrega emails de usuarios que no requieran pago al registrarse
                 </p>
               </div>
             ) : (
@@ -319,9 +321,9 @@ export default function ExemptedUsersPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar email exento?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar usuario exento?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El email será removido de la
+              Esta acción no se puede deshacer. El usuario será removido de la
               lista de exentos y futuros registros con este email requerirán
               pago.
             </AlertDialogDescription>

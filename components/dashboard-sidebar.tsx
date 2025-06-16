@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import type { Doctor } from "@/lib/supabase";
+import type { Doctor, Admin } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import {
   Home,
@@ -14,6 +14,9 @@ import {
   X,
   LogOut,
   Menu,
+  Shield,
+  BarChart3,
+  UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -22,11 +25,16 @@ import { Button } from "@/components/ui/button";
 import { ThemeInitializer } from "@/components/theme-initializer";
 
 interface DashboardSidebarProps {
-  doctor: Doctor;
+  user: Doctor | Admin;
+  userType: "doctor" | "admin";
   children: React.ReactNode;
 }
 
-export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  user,
+  userType,
+  children,
+}: DashboardSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,7 +44,8 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
     router.push("/");
   };
 
-  const navigation = [
+  // Navigation for doctors
+  const doctorNavigation = [
     {
       name: "Dashboard",
       href: "/dashboard",
@@ -69,7 +78,42 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
     },
   ];
 
-  const quickActions = [
+  // Navigation for admins
+  const adminNavigation = [
+    {
+      name: "Dashboard",
+      href: "/admin",
+      icon: Home,
+      current: pathname === "/admin",
+    },
+    {
+      name: "Usuarios",
+      href: "/admin/doctors",
+      icon: Users,
+      current: pathname === "/admin/doctors",
+    },
+    {
+      name: "Estadísticas",
+      href: "/admin/statistics",
+      icon: BarChart3,
+      current: pathname.startsWith("/admin/statistics"),
+    },
+    {
+      name: "Usuarios Exentos",
+      href: "/admin/exempted-users",
+      icon: UserPlus,
+      current: pathname.startsWith("/admin/exempted-users"),
+    },
+    {
+      name: "Mi Perfil",
+      href: "/admin/profile",
+      icon: User,
+      current: pathname.startsWith("/admin/profile"),
+    },
+  ];
+
+  // Quick actions for doctors
+  const doctorQuickActions = [
     {
       name: "Nuevo Paciente",
       href: "/dashboard/patients?action=new",
@@ -90,9 +134,63 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
     },
   ];
 
+  // Quick actions for admins
+  const adminQuickActions = [
+    {
+      name: "Ver Estadísticas",
+      href: "/admin/statistics",
+      icon: BarChart3,
+      color: "text-blue-600",
+    },
+    {
+      name: "Gestionar Usuarios",
+      href: "/admin",
+      icon: Users,
+      color: "text-green-600",
+    },
+    {
+      name: "Usuarios Exentos",
+      href: "/admin/exempted-users",
+      icon: UserPlus,
+      color: "text-orange-600",
+    },
+  ];
+
+  const navigation = userType === "doctor" ? doctorNavigation : adminNavigation;
+  const quickActions =
+    userType === "doctor" ? doctorQuickActions : adminQuickActions;
+
+  // Get user display info
+  const getUserDisplayInfo = () => {
+    if (userType === "doctor") {
+      const doctor = user as Doctor;
+      return {
+        title: `${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`,
+        subtitle: doctor.specialty || "Médico General",
+        icon: User,
+        bgColor: "bg-primary",
+        iconColor: "text-primary-foreground",
+      };
+    } else {
+      const admin = user as Admin;
+      return {
+        title: admin.full_name,
+        subtitle: admin.is_super_admin
+          ? "Super Administrador"
+          : "Administrador",
+        icon: Shield,
+        bgColor: "bg-orange-600",
+        iconColor: "text-white",
+      };
+    }
+  };
+
+  const userInfo = getUserDisplayInfo();
+  const UserIcon = userInfo.icon;
+
   return (
     <div className="flex h-screen bg-background">
-      <ThemeInitializer doctorId={doctor.id} />
+      {userType === "doctor" && <ThemeInitializer doctorId={user.id} />}
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
@@ -114,8 +212,14 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div className="flex items-center">
-              <Stethoscope className="h-8 w-8 text-primary mr-3" />
-              <h1 className="text-xl font-bold text-foreground">GestMed</h1>
+              {userType === "doctor" ? (
+                <Stethoscope className="h-8 w-8 text-primary mr-3" />
+              ) : (
+                <Shield className="h-8 w-8 text-orange-600 mr-3" />
+              )}
+              <h1 className="text-xl font-bold text-foreground">
+                {userType === "doctor" ? "GestMed" : "Admin Panel"}
+              </h1>
             </div>
             <Button
               variant="ghost"
@@ -127,21 +231,22 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
             </Button>
           </div>
 
-          {/* Doctor info */}
+          {/* User info */}
           <div className="p-4 border-b border-border bg-muted/50">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary-foreground" />
+                <div
+                  className={`h-10 w-10 rounded-full ${userInfo.bgColor} flex items-center justify-center`}
+                >
+                  <UserIcon className={`h-6 w-6 ${userInfo.iconColor}`} />
                 </div>
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">
-                  {doctor.gender === "female" ? "Dra." : "Dr."}{" "}
-                  {doctor.full_name}
+                  {userInfo.title}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {doctor.specialty || "Médico General"}
+                  {userInfo.subtitle}
                 </p>
               </div>
             </div>
@@ -165,7 +270,9 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
                   <Icon
                     className={`mr-3 h-5 w-5 ${
                       item.current
-                        ? "text-primary"
+                        ? userType === "doctor"
+                          ? "text-primary"
+                          : "text-orange-600"
                         : "text-muted-foreground group-hover:text-foreground"
                     }`}
                   />
@@ -178,7 +285,9 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
           {/* Quick Actions */}
           <div className="px-2 py-4 border-t border-border">
             <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              Acciones Rápidas
+              {userType === "doctor"
+                ? "Acciones Rápidas"
+                : "Herramientas Admin"}
             </h3>
             <div className="space-y-1">
               {quickActions.map((action) => {
@@ -226,8 +335,19 @@ export function DashboardSidebar({ doctor, children }: DashboardSidebarProps) {
               <Menu className="h-5 w-5" />
             </Button>
             <div className="flex items-center">
-              <Stethoscope className="h-6 w-6 text-primary mr-2" />
-              <span className="font-semibold text-foreground">GestMed</span>
+              {userType === "doctor" ? (
+                <>
+                  <Stethoscope className="h-6 w-6 text-primary mr-2" />
+                  <span className="font-semibold text-foreground">GestMed</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-6 w-6 text-orange-600 mr-2" />
+                  <span className="font-semibold text-foreground">
+                    Admin Panel
+                  </span>
+                </>
+              )}
             </div>
             <div className="w-8" /> {/* Spacer for centering */}
           </div>

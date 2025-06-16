@@ -5,7 +5,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { supabase, type Doctor } from "@/lib/supabase";
+import { supabase, type Admin } from "@/lib/supabase";
 
 export default function DashboardLayout({
   children,
@@ -13,7 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [admin, setAdmin] = useState<Admin | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,14 +32,14 @@ export default function DashboardLayout({
       }
 
       // Obtener datos del médico
-      const { data: doctorData, error: doctorError } = await supabase
-        .from("doctors")
+      const { data: adminData, error: adminError } = await supabase
+        .from("admins")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      if (doctorError) throw doctorError;
-      setDoctor(doctorData);
+      if (adminError) throw adminError;
+      setAdmin(adminData);
     } catch (error: any) {
       console.error("Error:", error.message);
       router.push("/login");
@@ -59,7 +59,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!doctor) {
+  if (!admin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -70,7 +70,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <DashboardSidebar user={doctor} userType="doctor">
+    <DashboardSidebar user={admin} userType="admin">
       {children}
     </DashboardSidebar>
   );

@@ -33,6 +33,12 @@ export function PaymentUpload({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [newSubscriptionStatus, setNewSubscriptionStatus] = useState<
+    string | null
+  >("pending_verification");
+  const [shouldActivate, setShouldActivate] = useState<boolean | null>(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Generar signed URL para el archivo actual
@@ -139,18 +145,77 @@ export function PaymentUpload({
 
       const result = await response.json();
 
-      // Actualizar la base de datos con la nueva URL (guardar la ruta del archivo)
+      // ✅ NUEVA LÓGICA: Consultar fecha de último pago antes de actualizar
+      // Primero obtener la información actual del médico
+      const { data: currentDoctor, error: fetchError } = await supabase
+        .from("doctors")
+        .select("last_payment_date, subscription_status")
+        .eq("id", doctorId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Determinar el estado correcto basado en la fecha del último pago
+      const now = new Date();
+      //   let newSubscriptionStatus = "pending_verification";
+      //   let shouldActivate = false;
+      //   let statusMessage = "";
+
+      if (currentDoctor.last_payment_date) {
+        // Calcular días desde el último pago
+        const lastPayment = new Date(currentDoctor.last_payment_date);
+        const daysSinceLastPayment = Math.floor(
+          (now.getTime() - lastPayment.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        console.log(`Días desde último pago: ${daysSinceLastPayment}`);
+
+        if (daysSinceLastPayment <= 30) {
+          // Renovación dentro de los 30 días - mantener activo
+          setNewSubscriptionStatus("active");
+          setShouldActivate(true);
+          setStatusMessage(
+            "Comprobante subido correctamente. Tu cuenta sigue activa."
+          );
+          console.log("Renovación temprana - cuenta permanece activa");
+        } else {
+          // Renovación tardía - requiere verificación
+          setNewSubscriptionStatus("pending_verification");
+          setShouldActivate(false);
+          setStatusMessage(
+            "Comprobante subido correctamente. Pendiente de verificación por el administrador."
+          );
+          console.log("Renovación tardía - requiere verificación");
+        }
+      } else {
+        // Primer pago - requiere verificación
+        setNewSubscriptionStatus("pending_verification");
+        setShouldActivate(false);
+        setStatusMessage(
+          "Comprobante subido correctamente. Pendiente de verificación por el administrador."
+        );
+        console.log("Primer pago - requiere verificación");
+      }
+
+      // Calcular próxima fecha de pago (30 días desde ahora)
+      const nextPaymentDate = new Date();
+      nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
+
+      // Actualizar la base de datos con el estado correcto
       const { error: updateError } = await supabase
         .from("doctors")
         .update({
-          payment_proof_url: result.filePath, // Guardar la ruta del archivo, no la signed URL
-          subscription_status: "pending_verification",
-          last_payment_date: new Date().toISOString(),
+          payment_proof_url: result.data.publicUrl,
+          subscription_status: newSubscriptionStatus,
+          is_active: shouldActivate,
+          last_payment_date: now.toISOString(),
+          next_payment_date: nextPaymentDate.toISOString(),
         })
         .eq("id", doctorId);
 
-      if (updateError) throw updateError;
-
+      if (updateError) {
+        throw updateError;
+      }
       // Notificar al admin
       await fetch("/api/notify-admin", {
         method: "POST",

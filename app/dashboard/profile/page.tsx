@@ -337,8 +337,8 @@ export default function ProfilePage() {
                     doctor.subscription_status === "active"
                       ? "default"
                       : doctor.subscription_status === "pending_verification"
-                      ? "secondary"
-                      : "destructive"
+                        ? "secondary"
+                        : "destructive"
                   }
                 >
                   {doctor.subscription_status === "active" &&
@@ -357,48 +357,8 @@ export default function ProfilePage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar con información básica */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <Avatar className="h-24 w-24 mx-auto mb-4">
-                  <AvatarImage src={doctor.signature_stamp_url || ""} />
-                  <AvatarFallback className="text-2xl">
-                    {doctor.full_name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <CardTitle>
-                  {doctor.gender === "female" ? "Dra." : "Dr."}{" "}
-                  {doctor.full_name}
-                </CardTitle>
-                <CardDescription>
-                  {doctor.specialty || "Médico General"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Mail className="h-4 w-4 mr-2" />
-                  {doctor.email}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Matrícula: {doctor.license_number}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Miembro desde{" "}
-                  {new Date(doctor.created_at).toLocaleDateString("es-ES")}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Contenido principal con tabs */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <Tabs defaultValue="personal" className="space-y-6">
               <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="personal">
