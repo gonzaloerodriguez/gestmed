@@ -157,16 +157,37 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       if (consultationsError) throw consultationsError;
       setConsultations(consultationsData || []);
 
-      // Cargar prescripciones
+      // CORREGIDO: Cargar TODAS las prescripciones del paciente
+      // Tanto las que tienen medical_history_id como las que no
       const { data: prescriptionsData, error: prescriptionsError } =
         await supabase
+          .from("prescriptions")
+          .select("*")
+          .or(
+            `medical_history_id.eq.${historyData.id},and(patient_name.eq.${patientData.full_name},doctor_id.eq.${user.id})`
+          )
+          .order("date_prescribed", { ascending: false });
+
+      if (prescriptionsError) {
+        console.error("Error cargando prescripciones:", prescriptionsError);
+        // Fallback: cargar por medical_history_id solamente
+        const { data: fallbackData, error: fallbackError } = await supabase
           .from("prescriptions")
           .select("*")
           .eq("medical_history_id", historyData.id)
           .order("date_prescribed", { ascending: false });
 
-      if (prescriptionsError) throw prescriptionsError;
-      setPrescriptions(prescriptionsData || []);
+        if (fallbackError) throw fallbackError;
+        setPrescriptions(fallbackData || []);
+      } else {
+        setPrescriptions(prescriptionsData || []);
+      }
+
+      console.log("Datos cargados:", {
+        patient: patientData.full_name,
+        medicalHistoryId: historyData.id,
+        prescriptionsCount: prescriptionsData?.length || 0,
+      });
     } catch (error: any) {
       console.error("Error cargando datos del paciente:", error);
       alert("Error cargando información del paciente");
@@ -200,6 +221,14 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     setShowPrescriptionForm(false);
     setSelectedConsultation(null);
     loadPatientData();
+  };
+
+  // Función para crear prescripción directa
+  const handleCreateDirectPrescription = () => {
+    if (!medicalHistory || !patient || !doctor) return;
+    router.push(
+      `/dashboard/prescriptions/new?patientId=${patient.id}&medicalHistoryId=${medicalHistory.id}`
+    );
   };
 
   if (loading) {
@@ -289,6 +318,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           <Button onClick={() => setShowConsultationForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nueva Consulta
+          </Button>
+          <Button variant="outline" onClick={handleCreateDirectPrescription}>
+            <FileText className="h-4 w-4 mr-2" />
+            Nueva Receta
           </Button>
           <Button
             variant="outline"
@@ -592,12 +625,20 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         <TabsContent value="prescriptions">
           <Card>
             <CardHeader>
-              <CardTitle>Historial de Prescripciones</CardTitle>
-              <CardDescription>
-                {prescriptions.length} prescripción
-                {prescriptions.length !== 1 ? "es" : ""} emitida
-                {prescriptions.length !== 1 ? "s" : ""}
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Historial de Prescripciones</CardTitle>
+                  <CardDescription>
+                    {prescriptions.length} prescripción
+                    {prescriptions.length !== 1 ? "es" : ""} emitida
+                    {prescriptions.length !== 1 ? "s" : ""}
+                  </CardDescription>
+                </div>
+                <Button onClick={handleCreateDirectPrescription}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Receta
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {prescriptions.length === 0 ? (
@@ -607,8 +648,16 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                     No hay prescripciones registradas
                   </p>
                   <p className="text-sm text-gray-400 mt-2">
-                    Las prescripciones se crean desde las consultas médicas
+                    Las prescripciones se pueden crear desde las consultas
+                    médicas o directamente
                   </p>
+                  <Button
+                    onClick={handleCreateDirectPrescription}
+                    className="mt-4"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Primera Receta
+                  </Button>
                 </div>
               ) : (
                 <Table>
@@ -617,6 +666,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                       <TableHead>Fecha</TableHead>
                       <TableHead>Diagnóstico</TableHead>
                       <TableHead>Medicamentos</TableHead>
+                      <TableHead>Estado</TableHead>
                       <TableHead>Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -630,13 +680,24 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                         </TableCell>
                         <TableCell>
                           <p className="max-w-xs truncate">
-                            {prescription.diagnosis}
+                            {prescription.diagnosis || "Sin diagnóstico"}
                           </p>
                         </TableCell>
                         <TableCell>
                           <p className="max-w-xs truncate">
                             {prescription.medications}
                           </p>
+                        </TableCell>
+                        <TableCell>
+                          {prescription.medical_history_id ? (
+                            <Badge variant="default" className="text-xs">
+                              Vinculada
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Sin vincular
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Button
