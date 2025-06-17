@@ -65,6 +65,9 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
     totalPrescriptions: 0,
     activePrescriptions: 0,
     thisMonthPrescriptions: 0,
+    consultationsTotal: 0,
+    consultationsLast7Days: 0,
+    consultationsThisMonth: 0,
   });
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -129,6 +132,7 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
       if (error) throw error;
 
       setDoctor(data);
+      await loadConsultationStats(data.id);
 
       // Generar signed URL si hay comprobante de pago
       if (data.payment_proof_url) {
@@ -142,28 +146,35 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
 
   const loadPrescriptions = async () => {
     try {
-      const { data, error } = await supabase
-        .from("prescriptions")
-        .select("*")
-        .eq("doctor_id", id)
-        .order("created_at", { ascending: false })
-        .limit(10);
-      console.log(data);
+      console.log("🔍 Loading prescriptions for doctor:", id);
 
-      if (error) throw error;
+      // MÉTODO CORREGIDO: Usar filter en lugar de eq para mejor compatibilidad con UUID
+      const { data: prescriptionsData, error: prescriptionsError } =
+        await supabase
+          .from("prescriptions")
+          .select("*")
+          .filter("doctor_id", "eq", id)
+          .order("created_at", { ascending: false })
+          .limit(10);
 
-      setPrescriptions(data || []);
+      if (prescriptionsError) {
+        console.error("Error loading prescriptions:", prescriptionsError);
+        throw prescriptionsError;
+      }
 
-      // Calcular estadísticas
+      console.log("✅ Prescriptions loaded:", prescriptionsData?.length || 0);
+      setPrescriptions(prescriptionsData || []);
+
+      // Calcular estadísticas usando el mismo método
       const { count: totalPrescriptions } = await supabase
         .from("prescriptions")
         .select("*", { count: "exact", head: true })
-        .eq("doctor_id", id);
+        .filter("doctor_id", "eq", id);
 
       const { count: activePrescriptions } = await supabase
         .from("prescriptions")
         .select("*", { count: "exact", head: true })
-        .eq("doctor_id", id)
+        .filter("doctor_id", "eq", id)
         .eq("is_active", true);
 
       // Recetas de este mes
@@ -177,16 +188,64 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
       const { count: thisMonthPrescriptions } = await supabase
         .from("prescriptions")
         .select("*", { count: "exact", head: true })
-        .eq("doctor_id", id)
+        .filter("doctor_id", "eq", id)
         .gte("created_at", firstDayOfMonth);
 
-      setStats({
+      setStats((prev) => ({
+        ...prev,
         totalPrescriptions: totalPrescriptions || 0,
         activePrescriptions: activePrescriptions || 0,
         thisMonthPrescriptions: thisMonthPrescriptions || 0,
+      }));
+
+      console.log("📈 Stats calculated:", {
+        totalPrescriptions,
+        activePrescriptions,
+        thisMonthPrescriptions,
       });
     } catch (error: any) {
-      console.error("Error loading prescriptions:", error.message);
+      console.error("❌ Error loading prescriptions:", error.message);
+    }
+  };
+  const loadConsultationStats = async (doctorId: string) => {
+    try {
+      const now = new Date();
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(now.getDate() - 7);
+
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Total
+      const { count: total } = await supabase
+        .from("consultations")
+        .select("*", { count: "exact", head: true })
+        .eq("doctor_id", doctorId);
+
+      // Última semana
+      const { count: last7days } = await supabase
+        .from("consultations")
+        .select("*", { count: "exact", head: true })
+        .eq("doctor_id", doctorId)
+        .gte("consultation_date", oneWeekAgo.toISOString());
+
+      // Mes actual
+      const { count: thisMonth } = await supabase
+        .from("consultations")
+        .select("*", { count: "exact", head: true })
+        .eq("doctor_id", doctorId)
+        .gte("consultation_date", firstDayOfMonth.toISOString());
+
+      setStats((prev) => ({
+        ...prev,
+        consultationsTotal: total || 0,
+        consultationsLast7Days: last7days || 0,
+        consultationsThisMonth: thisMonth || 0,
+      }));
+    } catch (error: any) {
+      console.error(
+        "❌ Error cargando estadísticas de consultas:",
+        error.message
+      );
     }
   };
 
@@ -689,86 +748,48 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Consultas Totales
+                  </CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats.consultationsTotal}
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Recetas Recientes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recetas Recientes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {prescriptions.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No hay recetas creadas</p>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Últimos 7 días
+                  </CardTitle>
+                  <Calendar className="h-4 w-4 text-yellow-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {stats.consultationsLast7Days}
                   </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Paciente</TableHead>
-                          <TableHead>Fecha</TableHead>
-                          <TableHead>Diagnóstico</TableHead>
-                          <TableHead>Estado</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {prescriptions.map((prescription) => (
-                          <TableRow key={prescription.id}>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">
-                                  {prescription.patient_name}
-                                </div>
-                                {prescription.patient_age && (
-                                  <div className="text-sm text-gray-500">
-                                    {prescription.patient_age} años
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="text-sm">
-                                  {new Date(
-                                    prescription.date_prescribed
-                                  ).toLocaleDateString("es-ES")}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {new Date(
-                                    prescription.created_at
-                                  ).toLocaleTimeString("es-ES", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="max-w-xs truncate">
-                                {prescription.diagnosis || "Sin diagnóstico"}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  prescription.is_active
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {prescription.is_active ? "Activa" : "Inactiva"}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Este Mes
+                  </CardTitle>
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {stats.consultationsThisMonth}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </main>
