@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { supabase, type Admin } from "@/lib/supabase";
+import { ThemeInitializer } from "@/components/theme-initializer";
 
 export default function DashboardLayout({
   children,
@@ -70,8 +71,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <DashboardSidebar user={admin} userType="admin">
-      {children}
-    </DashboardSidebar>
+    <>
+      <ThemeInitializer userId={admin.id} userType="admin" />
+      <DashboardSidebar user={admin} userType="admin">
+        {children}
+      </DashboardSidebar>
+    </>
   );
 }
