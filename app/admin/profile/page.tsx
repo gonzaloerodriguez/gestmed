@@ -46,6 +46,7 @@ import {
 import { supabase, type Admin } from "@/lib/supabase";
 import { useAuthGuard } from "@/lib/auth-guard";
 import { AdminThemeSelector } from "@/components/admin-theme-selector";
+import { useUser } from "@/contexts/user-context";
 
 interface AdminActivity {
   id: string;
@@ -65,6 +66,7 @@ export default function AdminProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const { updateUserData } = useUser();
 
   const [personalData, setPersonalData] = useState({
     full_name: "",
@@ -199,6 +201,15 @@ export default function AdminProfilePage() {
 
     setSaving(true);
     try {
+      // Actualización optimista - UI se actualiza inmediatamente
+      updateUserData({
+        full_name: personalData.full_name,
+        email: personalData.email,
+        updated_at: new Date().toISOString(),
+      });
+      console.log(personalData.full_name);
+      console.log(admin.id);
+
       const { error } = await supabase
         .from("admins")
         .update({
@@ -208,7 +219,11 @@ export default function AdminProfilePage() {
         })
         .eq("id", admin.id);
 
-      if (error) throw error;
+      if (error) {
+        // Si falla, revertir cambios
+        updateUserData(admin);
+        throw error;
+      }
 
       if (personalData.email !== admin.email) {
         const { error: authError } = await supabase.auth.updateUser({

@@ -1,13 +1,13 @@
 "use client";
 
 import type React from "react";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { UserProvider } from "@/contexts/user-context";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { supabase, type Doctor } from "@/lib/supabase";
 
-export default function DashboardLayout({
+export default function DashboardLayoutWithContext({
   children,
 }: {
   children: React.ReactNode;
@@ -70,8 +70,8 @@ export default function DashboardLayout({
   }
 
   return (
-    <DashboardSidebar user={doctor} userType="doctor">
-      {children}
-    </DashboardSidebar>
+    <UserProvider initialUser={doctor} initialUserType="doctor">
+      <DashboardSidebar>{children}</DashboardSidebar>
+    </UserProvider>
   );
 }
