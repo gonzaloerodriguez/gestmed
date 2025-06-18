@@ -59,7 +59,7 @@ export default function HomePage() {
 
         {/* Features */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <Card>
+          <Card className="bg-indigo-100">
             <CardHeader>
               <FileText className="h-10 w-10 text-blue-600 mb-2" />
               <CardTitle>Recetas Digitales</CardTitle>
@@ -72,7 +72,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-indigo-100">
             <CardHeader>
               <Shield className="h-10 w-10 text-green-600 mb-2" />
               <CardTitle>Seguro y Confiable</CardTitle>
@@ -85,7 +85,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-indigo-100">
             <CardHeader>
               <Download className="h-10 w-10 text-purple-600 mb-2" />
               <CardTitle>Descarga PDF</CardTitle>
@@ -97,7 +97,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-indigo-100">
             <CardHeader>
               <Stethoscope className="h-10 w-10 text-red-600 mb-2" />
               <CardTitle>Gestión Completa</CardTitle>
