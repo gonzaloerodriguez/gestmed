@@ -22,10 +22,14 @@ export default function HomePage() {
             </div>
             <div className="flex space-x-4">
               <Link href="/login">
-                <Button variant="outline">Iniciar Sesión</Button>
+                <Button className="text-black border-black" variant="outline">
+                  Iniciar Sesión
+                </Button>
               </Link>
               <Link href="/register">
-                <Button>Registrarse</Button>
+                <Button className="bg-black hover:bg-gray-800 ">
+                  Registrarse
+                </Button>
               </Link>
             </div>
           </div>
@@ -46,7 +50,7 @@ export default function HomePage() {
           </p>
           <div className="mt-10">
             <Link href="/register">
-              <Button size="lg" className="text-lg px-8 py-3">
+              <Button size="lg" className="text-lg px-8 py-3 bg-black">
                 Comenzar Ahora
               </Button>
             </Link>
