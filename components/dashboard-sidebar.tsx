@@ -241,6 +241,12 @@ export function DashboardSidebar({
       };
     }
 
+    if (pathname.includes("/consultations/new")) {
+      return {
+        title: "Nueva consulta",
+        description: "Registrar una nueva consulta médica",
+      };
+    }
     if (pathname.includes("/consultations")) {
       return {
         title: "Consultas",
@@ -314,8 +320,19 @@ export function DashboardSidebar({
       ? true
       : false;
   // Determine back URL
+  // const getBackUrl = () => {
+  //   if (backUrl) return backUrl;
+  //   return userType === "doctor" ? "/dashboard" : "/admin";
+  // };
+
   const getBackUrl = () => {
-    if (backUrl) return backUrl;
+    if (pathname) {
+      const parts = pathname.split("/").filter(Boolean); // elimina ""
+      parts.pop(); // elimina la última parte del path
+
+      console.log(`/${parts.join("/")}`);
+      return `/${parts.join("/")}`;
+    }
     return userType === "doctor" ? "/dashboard" : "/admin";
   };
 
@@ -376,9 +393,37 @@ export function DashboardSidebar({
                 <p className="text-sm font-medium text-foreground">
                   {userInfo.title}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {userInfo.subtitle}
+                <p className="text-xs text-muted-foreground mt-2">
+                  {(user as Admin) ? "" : userInfo.subtitle}
                 </p>
+                {(user as Doctor).subscription_status && (
+                  <Badge
+                    variant={
+                      (user as Doctor).subscription_status === "active"
+                        ? "default"
+                        : (user as Doctor).subscription_status ===
+                            "pending_verification"
+                          ? "secondary"
+                          : "destructive"
+                    }
+                  >
+                    {(user as Doctor).subscription_status === "active" &&
+                      "Suscripción Activa"}
+                    {(user as Doctor).subscription_status ===
+                      "pending_verification" && "Pago Pendiente"}
+                    {(user as Doctor).subscription_status === "expired" &&
+                      "Suscripción Vencida"}
+                  </Badge>
+                )}
+                {(user as Admin).is_super_admin && (
+                  <Badge
+                    variant={
+                      (user as Admin).is_super_admin ? "default" : "secondary"
+                    }
+                  >
+                    {(user as Admin).is_super_admin ? "Super Admin" : "Admin"}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -488,7 +533,7 @@ export function DashboardSidebar({
         <header className="bg-card shadow-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-6">
-              <div className="flex items-center">
+              <div className="flex items-center lg:w-1/2">
                 {showBackButton && (
                   <Button
                     variant="ghost"
@@ -510,28 +555,9 @@ export function DashboardSidebar({
               </div>
 
               {/* Status badges - Conditional based on user type */}
-              <div className="flex items-center space-x-4">
+              <div className="hidden lg:flex items-center space-x-4">
                 {userType === "doctor" && (
                   <>
-                    {(user as Doctor).subscription_status && (
-                      <Badge
-                        variant={
-                          (user as Doctor).subscription_status === "active"
-                            ? "default"
-                            : (user as Doctor).subscription_status ===
-                                "pending_verification"
-                              ? "secondary"
-                              : "destructive"
-                        }
-                      >
-                        {(user as Doctor).subscription_status === "active" &&
-                          "Suscripción Activa"}
-                        {(user as Doctor).subscription_status ===
-                          "pending_verification" && "Pago Pendiente"}
-                        {(user as Doctor).subscription_status === "expired" &&
-                          "Suscripción Vencida"}
-                      </Badge>
-                    )}
                     <Link href="/dashboard/profile">
                       <Button variant="outline" size="sm">
                         <User className="h-4 w-4 mr-2" />
@@ -547,19 +573,15 @@ export function DashboardSidebar({
 
                 {userType === "admin" && (
                   <>
-                    <Badge
-                      variant={
-                        (user as Admin).is_super_admin ? "default" : "secondary"
-                      }
-                    >
-                      <Shield className="h-3 w-3 mr-1" />
-                      {(user as Admin).is_super_admin ? "Super Admin" : "Admin"}
-                    </Badge>
                     <Button variant="outline" size="sm" asChild>
                       <Link href="/admin/settings">
                         <Settings className="h-4 w-4 mr-2" />
                         Configuración
                       </Link>
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Cerrar Sesión
                     </Button>
                   </>
                 )}

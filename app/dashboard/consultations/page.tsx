@@ -161,25 +161,7 @@ export default function ConsultationsPage() {
       {/* Header */}
       <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/dashboard")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Mis Consultas
-                </h1>
-                <p className="text-muted-foreground">
-                  Gestiona todas tus consultas médicas
-                </p>
-              </div>
-            </div>
+          <div className="flex items-center justify-end py-6 w-full">
             <Link href="/dashboard/consultations/new">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />

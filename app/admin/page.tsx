@@ -242,33 +242,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl bg-background mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Panel de Administrador
-              </h1>
-              <p className="text-muted-foreground">
-                Gestión de usuarios médicos - {admin.full_name}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary">
-                <Shield className="h-3 w-3 mr-1" />
-                {admin.is_super_admin ? "Super Admin" : "Admin"}
-              </Badge>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="max-w-7xl bg-background mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

@@ -183,37 +183,6 @@ export default function ExemptedUsersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/admin")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Usuarios Exentos de Pago
-                </h1>
-                <p className="text-muted-foreground">
-                  Gestiona los usuarios que no requieren pago al registrarse
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="text-sm text-muted-foreground">
-                {admin?.full_name}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card className="mb-8">
           <CardHeader>

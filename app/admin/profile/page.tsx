@@ -399,42 +399,6 @@ export default function AdminProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/admin/dashboard")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Mi Perfil de Administrador
-                </h1>
-                <p className="text-muted-foreground">
-                  Gestiona tu cuenta y configuraciones administrativas
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant={admin.is_super_admin ? "default" : "secondary"}>
-                <Shield className="h-3 w-3 mr-1" />
-                {admin.is_super_admin ? "Super Admin" : "Admin"}
-              </Badge>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

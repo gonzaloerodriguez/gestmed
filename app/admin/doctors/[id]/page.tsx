@@ -422,48 +422,26 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl bg-background mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/admin")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  {doctor.gender === "female" ? "Dra." : "Dr."}{" "}
-                  {doctor.full_name}
-                </h1>
-                <p className="text-muted-foreground">
-                  Información detallada del médico
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Badge variant={doctor.is_active ? "default" : "secondary"}>
-                {doctor.is_active ? "Activo" : "Inactivo"}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="max-w-7xl bg-background mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 gap-8">
           {/* Información Personal */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Información Personal
-                </CardTitle>
+                <div className="flex items-center justify-between w-full border-b-2 pb-1">
+                  <div>
+                    <h1 className="text-2xl font-bold text-foreground">
+                      {doctor.gender === "female" ? "Dra." : "Dr."}{" "}
+                      {doctor.full_name}
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Información detallada del médico
+                    </p>
+                  </div>
+                  <Badge variant={doctor.is_active ? "default" : "secondary"}>
+                    {doctor.is_active ? "Activo" : "Inactivo"}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
