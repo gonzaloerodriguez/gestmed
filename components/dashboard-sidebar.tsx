@@ -17,18 +17,31 @@ import {
   Shield,
   BarChart3,
   UserPlus,
+  ArrowLeft,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ThemeInitializer } from "@/components/theme-initializer";
 
 interface DashboardSidebarProps {
   children: React.ReactNode;
+  pageTitle?: string;
+  pageDescription?: string;
+  showBackButton?: boolean;
+  backUrl?: string;
 }
 
-export function DashboardSidebar({ children }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  children,
+  pageTitle,
+  pageDescription,
+  showBackButton = false,
+  backUrl,
+}: DashboardSidebarProps) {
   const { user, userType, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
@@ -203,8 +216,108 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
     }
   };
 
+  // Get page info based on current route
+  const getPageInfo = () => {
+    if (pageTitle && pageDescription) {
+      return { title: pageTitle, description: pageDescription };
+    }
+
+    // Auto-detect based on pathname
+    if (pathname.includes("/profile")) {
+      return {
+        title:
+          userType === "doctor" ? "Mi Perfil" : "Mi Perfil de Administrador",
+        description:
+          userType === "doctor"
+            ? "Gestiona tu información personal y credenciales"
+            : "Gestiona tu cuenta y configuraciones administrativas",
+      };
+    }
+
+    if (pathname.includes("/patients")) {
+      return {
+        title: "Pacientes",
+        description: "Gestiona la información de tus pacientes",
+      };
+    }
+
+    if (pathname.includes("/consultations")) {
+      return {
+        title: "Consultas",
+        description: "Historial y gestión de consultas médicas",
+      };
+    }
+
+    if (pathname.includes("/prescriptions/new")) {
+      return {
+        title: "Nueva receta",
+        description: "Crear una nueva receta médica",
+      };
+    }
+
+    if (pathname.includes("/prescriptions") && pathname.endsWith("/edit")) {
+      return {
+        title: "Editar receta",
+        description: "Modificar los datos de la receta médica",
+      };
+    }
+
+    if (pathname.includes("/prescriptions")) {
+      return { title: "Recetas", description: "Gestión de recetas médicas" };
+    }
+
+    if (pathname.includes("/statistics")) {
+      return {
+        title: "Estadísticas",
+        description: "Análisis y reportes del sistema",
+      };
+    }
+
+    if (pathname.includes("/doctors")) {
+      return {
+        title: "Gestión de Usuarios",
+        description: "Administra médicos y usuarios del sistema",
+      };
+    }
+
+    if (pathname.includes("/exempted-users")) {
+      return {
+        title: "Usuarios Exentos",
+        description: "Gestiona usuarios con acceso especial",
+      };
+    }
+
+    // Default dashboard
+    return {
+      title:
+        userType === "doctor"
+          ? `Bienvenido, ${userInfo?.title}`
+          : "Panel de Administración",
+      description:
+        userType === "doctor"
+          ? `${userInfo?.subtitle}`
+          : "Resumen del sistema y estadísticas",
+    };
+  };
+
   const userInfo = getUserDisplayInfo();
+  const pageInfo = getPageInfo();
   const UserIcon = userInfo.icon;
+  showBackButton =
+    pathname.includes("/patients") ||
+    pathname.includes("/profile") ||
+    pathname.includes("/stadistics") ||
+    pathname.includes("/prescriptions") ||
+    pathname.includes("/exempted-users") ||
+    pathname.includes("/consultations") ||
+    pathname.includes("/doctors")
+      ? true
+      : false;
+  // Determine back URL
+  const getBackUrl = () => {
+    if (backUrl) return backUrl;
+    return userType === "doctor" ? "/dashboard" : "/admin";
+  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -371,6 +484,90 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
           </div>
         </div>
 
+        {/* Page Header - NUEVO */}
+        <header className="bg-card shadow-sm border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between py-6">
+              <div className="flex items-center">
+                {showBackButton && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => router.push(getBackUrl())}
+                    className="mr-4"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Volver
+                  </Button>
+                )}
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {pageInfo.title}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    {pageInfo.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Status badges - Conditional based on user type */}
+              <div className="flex items-center space-x-4">
+                {userType === "doctor" && (
+                  <>
+                    {(user as Doctor).subscription_status && (
+                      <Badge
+                        variant={
+                          (user as Doctor).subscription_status === "active"
+                            ? "default"
+                            : (user as Doctor).subscription_status ===
+                                "pending_verification"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {(user as Doctor).subscription_status === "active" &&
+                          "Suscripción Activa"}
+                        {(user as Doctor).subscription_status ===
+                          "pending_verification" && "Pago Pendiente"}
+                        {(user as Doctor).subscription_status === "expired" &&
+                          "Suscripción Vencida"}
+                      </Badge>
+                    )}
+                    <Link href="/dashboard/profile">
+                      <Button variant="outline" size="sm">
+                        <User className="h-4 w-4 mr-2" />
+                        Perfil
+                      </Button>
+                    </Link>
+                    <Button variant="outline" size="sm" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Cerrar Sesión
+                    </Button>
+                  </>
+                )}
+
+                {userType === "admin" && (
+                  <>
+                    <Badge
+                      variant={
+                        (user as Admin).is_super_admin ? "default" : "secondary"
+                      }
+                    >
+                      <Shield className="h-3 w-3 mr-1" />
+                      {(user as Admin).is_super_admin ? "Super Admin" : "Admin"}
+                    </Badge>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/admin/settings">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configuración
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
         {/* Page content */}
         <main className="flex-1 overflow-auto bg-background">{children}</main>
       </div>
@@ -381,7 +578,7 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
 // "use client";
 
 // import type React from "react";
-
+// import { useUser } from "@/contexts/user-context";
 // import type { Doctor, Admin } from "@/lib/supabase";
 // import { supabase } from "@/lib/supabase";
 // import {
@@ -405,16 +602,11 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
 // import { ThemeInitializer } from "@/components/theme-initializer";
 
 // interface DashboardSidebarProps {
-//   user: Doctor | Admin;
-//   userType: "doctor" | "admin";
 //   children: React.ReactNode;
 // }
 
-// export function DashboardSidebar({
-//   user,
-//   userType,
-//   children,
-// }: DashboardSidebarProps) {
+// export function DashboardSidebar({ children }: DashboardSidebarProps) {
+//   const { user, userType, loading } = useUser();
 //   const router = useRouter();
 //   const pathname = usePathname();
 //   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -536,11 +728,34 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
 //     },
 //   ];
 
+//   if (loading) {
+//     return (
+//       <div className="min-h-screen bg-background flex items-center justify-center">
+//         <div className="text-center">
+//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+//           <p className="mt-4 text-muted-foreground">Cargando...</p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   if (!user || !userType) {
+//     return (
+//       <div className="min-h-screen bg-background flex items-center justify-center">
+//         <div className="text-center">
+//           <p className="text-red-600">
+//             Error al cargar información del usuario
+//           </p>
+//         </div>
+//       </div>
+//     );
+//   }
+
 //   const navigation = userType === "doctor" ? doctorNavigation : adminNavigation;
 //   const quickActions =
 //     userType === "doctor" ? doctorQuickActions : adminQuickActions;
 
-//   // Get user display info
+//   // Get user display info - AHORA REACTIVO
 //   const getUserDisplayInfo = () => {
 //     if (userType === "doctor") {
 //       const doctor = user as Doctor;
@@ -611,7 +826,7 @@ export function DashboardSidebar({ children }: DashboardSidebarProps) {
 //             </Button>
 //           </div>
 
-//           {/* User info */}
+//           {/* User info - AHORA SE ACTUALIZA AUTOMÁTICAMENTE */}
 //           <div className="p-4 border-b border-border bg-muted/50">
 //             <div className="flex items-center">
 //               <div className="flex-shrink-0">

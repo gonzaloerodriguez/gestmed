@@ -316,52 +316,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/dashboard")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mi Perfil</h1>
-                <p className="text-gray-600">
-                  Gestiona tu información personal y credenciales
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant={doctor.is_active ? "default" : "secondary"}>
-                {doctor.is_active ? "Activo" : "Inactivo"}
-              </Badge>
-              {doctor.subscription_status && (
-                <Badge
-                  variant={
-                    doctor.subscription_status === "active"
-                      ? "default"
-                      : doctor.subscription_status === "pending_verification"
-                        ? "secondary"
-                        : "destructive"
-                  }
-                >
-                  {doctor.subscription_status === "active" &&
-                    "Suscripción Activa"}
-                  {doctor.subscription_status === "pending_verification" &&
-                    "Pago Pendiente"}
-                  {doctor.subscription_status === "expired" &&
-                    "Suscripción Vencida"}
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-4">

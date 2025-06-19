@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FileText, Plus, User, LogOut, Eye, Stethoscope } from "lucide-react";
+import { FileText, Plus, User, Eye, Stethoscope } from "lucide-react";
 import { supabase, type Prescription } from "@/lib/supabase";
 import { PaymentReminder } from "@/components/payment-reminder";
 import { useAuthGuard } from "@/lib/auth-guard";
@@ -52,11 +52,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-  };
-
   // Mostrar loading mientras se verifica autenticación
   if (authLoading || loading) {
     return (
@@ -71,38 +66,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Bienvenido, {doctor?.gender === "female" ? "Dra." : "Dr."}{" "}
-                {doctor?.full_name}
-              </h1>
-              <p className="text-gray-600">
-                {doctor?.specialty || "Médico General"}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard/profile">
-                <Button variant="outline" size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  Perfil
-                </Button>
-              </Link>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Payment Reminder */}
         {doctor && (
           <PaymentReminder
             doctorId={doctor.id}
@@ -111,7 +75,6 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <Link href="/dashboard/prescriptions/new">

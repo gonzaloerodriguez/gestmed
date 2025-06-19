@@ -255,15 +255,6 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/admin/exempted-users")}
-                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Usuarios Exentos
-              </Button>
               <Badge variant="secondary">
                 <Shield className="h-3 w-3 mr-1" />
                 {admin.is_super_admin ? "Super Admin" : "Admin"}

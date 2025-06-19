@@ -178,16 +178,7 @@ export default function PatientsPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Users className="h-8 w-8 mr-3" />
-            Mis Pacientes
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Gestiona la información de tus pacientes y sus historias clínicas
-          </p>
-        </div>
+      <div className="flex items-center justify-end w-full mb-8">
         <Button onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Paciente

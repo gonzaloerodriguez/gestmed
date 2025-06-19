@@ -27,7 +27,7 @@ import { generatePrescriptionPDF } from "@/lib/pdf-generator";
 import { TestPDFButton } from "@/components/test-pdf-button";
 
 interface PrescriptionDetailPageProps {
-  params: Promise<{ id: string }>; // ✅ Definir params como Promise
+  params: Promise<{ id: string }>;
 }
 export default function PrescriptionDetailPage({
   params,
@@ -46,7 +46,7 @@ export default function PrescriptionDetailPage({
   useEffect(() => {
     const resolveParams = async () => {
       try {
-        const resolvedParams = await params; // ✅ Usar await para resolver params
+        const resolvedParams = await params;
         setPrescriptionId(resolvedParams.id);
       } catch (error) {
         console.error("Error resolviendo parámetros:", error);
@@ -82,7 +82,6 @@ export default function PrescriptionDetailPage({
           doctor:doctors(*)
         `
           )
-          // .eq("id", params.id)
           .eq("id", prescriptionId)
           .eq("doctor_id", user.id) // Asegurar que solo vea sus propias recetas
           .single();
@@ -187,32 +186,10 @@ export default function PrescriptionDetailPage({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-card shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/dashboard/prescriptions")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Detalle de Receta
-                </h1>
-                <p className="text-muted-foreground">
-                  Paciente: {prescription.patient_name}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Badge variant={prescription.is_active ? "default" : "secondary"}>
-                {prescription.is_active ? "Activa" : "Inactiva"}
-              </Badge>
+            <div className="flex items-end justify-end space-x-2 w-full">
               <Button
                 variant="outline"
                 size="sm"
@@ -246,10 +223,8 @@ export default function PrescriptionDetailPage({
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
-          {/* Información del Médico */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -296,7 +271,6 @@ export default function PrescriptionDetailPage({
             </CardContent>
           </Card>
 
-          {/* Información del Paciente */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -351,9 +325,7 @@ export default function PrescriptionDetailPage({
             </CardContent>
           </Card>
 
-          {/* Información Médica */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Diagnóstico */}
             {prescription.diagnosis && (
               <Card>
                 <CardHeader>
@@ -370,7 +342,6 @@ export default function PrescriptionDetailPage({
               </Card>
             )}
 
-            {/* Notas */}
             {prescription.notes && (
               <Card>
                 <CardHeader>
@@ -386,7 +357,6 @@ export default function PrescriptionDetailPage({
             )}
           </div>
 
-          {/* Medicamentos */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -403,7 +373,6 @@ export default function PrescriptionDetailPage({
             </CardContent>
           </Card>
 
-          {/* Instrucciones */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">

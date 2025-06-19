@@ -186,36 +186,8 @@ export default function NewPrescriptionPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/dashboard/prescriptions")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Nueva Receta
-                </h1>
-                <p className="text-muted-foreground">
-                  Crear una nueva receta médica
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Información del Médico */}
           <Card>
             <CardHeader>
               <CardTitle>Información del Médico</CardTitle>
@@ -266,7 +238,6 @@ export default function NewPrescriptionPage() {
             </CardContent>
           </Card>
 
-          {/* Selección de Paciente */}
           <Card>
             <CardHeader>
               <CardTitle>Información del Paciente</CardTitle>
@@ -283,7 +254,6 @@ export default function NewPrescriptionPage() {
 
               {selectedPatient && (
                 <div className="space-y-4">
-                  {/* Información del paciente */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <Label>Nombre Completo</Label>
@@ -323,7 +293,6 @@ export default function NewPrescriptionPage() {
                     )}
                   </div>
 
-                  {/* NUEVO: Estado del historial médico */}
                   <div className="p-4 rounded-lg border">
                     {medicalHistoryId ? (
                       <div className="flex items-center text-green-700 bg-green-50 p-3 rounded">
@@ -365,7 +334,6 @@ export default function NewPrescriptionPage() {
             </CardContent>
           </Card>
 
-          {/* Información Médica */}
           <Card>
             <CardHeader>
               <CardTitle>Información Médica</CardTitle>
@@ -426,7 +394,6 @@ export default function NewPrescriptionPage() {
             </CardContent>
           </Card>
 
-          {/* Botones de Acción */}
           <div className="flex justify-end space-x-4">
             <Button
               type="button"

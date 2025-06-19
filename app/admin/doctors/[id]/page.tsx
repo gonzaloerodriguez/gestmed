@@ -79,6 +79,11 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
     string | null
   >(null);
   const [generatingUrl, setGeneratingUrl] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [isEmailExempted, setIsEmailExempted] = useState(false);
+  const [emailCheckStatus, setEmailCheckStatus] = useState<
+    "idle" | "checking" | "exempted" | "not-exempted" | "error"
+  >("idle");
 
   useEffect(() => {
     checkAdminAndLoadData();
@@ -133,6 +138,7 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
 
       setDoctor(data);
       await loadConsultationStats(data.id);
+      await checkEmailExemption(data.email);
 
       // Generar signed URL si hay comprobante de pago
       if (data.payment_proof_url) {
@@ -352,6 +358,42 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
     }
   };
 
+  const checkEmailExemption = async (email: string) => {
+    if (!email.trim()) return;
+
+    setEmailCheckStatus("checking");
+
+    try {
+      const response = await fetch("/api/check-exemption", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error verificando exención");
+      }
+
+      if (result.isExempted) {
+        setIsEmailExempted(true);
+        setEmailCheckStatus("exempted");
+      } else {
+        setIsEmailExempted(false);
+        setEmailCheckStatus("not-exempted");
+      }
+    } catch (error: any) {
+      console.error("Error checking email exemption:", error);
+      setIsEmailExempted(false);
+      setEmailCheckStatus("error");
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -557,149 +599,170 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Estado de Suscripción
-                    </label>
-                    <div className="flex items-center mt-1">
-                      {doctor.subscription_status === "active" && (
+              {isEmailExempted ? (
+                <CardContent className="space-y-4">
+                  {" "}
+                  <div className="grid grid-cols-1  gap-4">
+                    <div className="">
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Estado de Suscripción
+                      </label>
+                      <div className="flex items-center mt-2">
                         <>
                           <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                          <Badge variant="default">Activa</Badge>
-                        </>
-                      )}
-                      {doctor.subscription_status ===
-                        "pending_verification" && (
-                        <>
-                          <Clock className="h-4 w-4 mr-2 text-yellow-600" />
-                          <Badge variant="secondary">
-                            Pendiente Verificación
+                          <Badge variant="default">
+                            Usuario exento de pago
                           </Badge>
                         </>
-                      )}
-                      {doctor.subscription_status === "expired" && (
-                        <>
-                          <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                          <Badge variant="destructive">Vencida</Badge>
-                        </>
-                      )}
+                      </div>
                     </div>
+                  </div>{" "}
+                </CardContent>
+              ) : (
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Estado de Suscripción
+                      </label>
+                      <div className="flex items-center mt-1">
+                        {doctor.subscription_status === "active" && (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                            <Badge variant="default">Activa</Badge>
+                          </>
+                        )}
+                        {doctor.subscription_status ===
+                          "pending_verification" && (
+                          <>
+                            <Clock className="h-4 w-4 mr-2 text-yellow-600" />
+                            <Badge variant="secondary">
+                              Pendiente Verificación
+                            </Badge>
+                          </>
+                        )}
+                        {doctor.subscription_status === "expired" && (
+                          <>
+                            <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                            <Badge variant="destructive">Vencida</Badge>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {doctor.last_payment_date && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Último Pago
+                        </label>
+                        <p className="text-lg">
+                          {new Date(
+                            doctor.last_payment_date
+                          ).toLocaleDateString("es-ES")}
+                        </p>
+                      </div>
+                    )}
+
+                    {doctor.next_payment_date && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">
+                          Próximo Pago
+                        </label>
+                        <p className="text-lg">
+                          {new Date(
+                            doctor.next_payment_date
+                          ).toLocaleDateString("es-ES")}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  {doctor.last_payment_date && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Último Pago
+                  {/* Payment Proof */}
+                  {doctor.payment_proof_url && (
+                    <div className="border-t pt-4">
+                      <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                        Comprobante de Pago
                       </label>
-                      <p className="text-lg">
-                        {new Date(doctor.last_payment_date).toLocaleDateString(
-                          "es-ES"
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  {doctor.next_payment_date && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Próximo Pago
-                      </label>
-                      <p className="text-lg">
-                        {new Date(doctor.next_payment_date).toLocaleDateString(
-                          "es-ES"
-                        )}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Payment Proof */}
-                {doctor.payment_proof_url && (
-                  <div className="border-t pt-4">
-                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                      Comprobante de Pago
-                    </label>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-background rounded-lg">
-                        <div className="flex items-center">
-                          <CreditCard className="h-5 w-5 mr-3 text-blue-600" />
-                          <div>
-                            <p className="font-medium">Comprobante Subido</p>
-                            <p className="text-sm text-muted-foreground">
-                              {doctor.subscription_status ===
-                              "pending_verification"
-                                ? "Pendiente de verificación"
-                                : "Verificado"}
-                            </p>
-                            {paymentProofSignedUrl && (
-                              <p className="text-xs text-green-600">
-                                ✓ Enlace disponible
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-background rounded-lg">
+                          <div className="flex items-center">
+                            <CreditCard className="h-5 w-5 mr-3 text-blue-600" />
+                            <div>
+                              <p className="font-medium">Comprobante Subido</p>
+                              <p className="text-sm text-muted-foreground">
+                                {doctor.subscription_status ===
+                                "pending_verification"
+                                  ? "Pendiente de verificación"
+                                  : "Verificado"}
                               </p>
-                            )}
+                              {paymentProofSignedUrl && (
+                                <p className="text-xs text-green-600">
+                                  ✓ Enlace disponible
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleViewPaymentProof}
+                              disabled={generatingUrl}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleDownloadPaymentProof}
+                              disabled={generatingUrl}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Descargar
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleViewPaymentProof}
-                            disabled={generatingUrl}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Ver
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleDownloadPaymentProof}
-                            disabled={generatingUrl}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Descargar
-                          </Button>
-                        </div>
+
+                        {/* Verification Actions */}
+                        {doctor.subscription_status ===
+                          "pending_verification" && (
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => openPaymentDialog("approve")}
+                              className="bg-green-600 hover:bg-green-700 flex-1"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Aprobar Pago
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => openPaymentDialog("reject")}
+                              className="flex-1"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Rechazar Pago
+                            </Button>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Verification Actions */}
-                      {doctor.subscription_status ===
-                        "pending_verification" && (
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openPaymentDialog("approve")}
-                            className="bg-green-600 hover:bg-green-700 flex-1"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Aprobar Pago
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openPaymentDialog("reject")}
-                            className="flex-1"
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Rechazar Pago
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {!doctor.payment_proof_url &&
-                  doctor.subscription_status !== "active" && (
-                    <div className="text-center py-4 text-muted-foreground">
-                      <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">
-                        No hay comprobante de pago subido
-                      </p>
                     </div>
                   )}
-              </CardContent>
+
+                  {!doctor.payment_proof_url &&
+                    doctor.subscription_status !== "active" && (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">
+                          No hay comprobante de pago subido
+                        </p>
+                      </div>
+                    )}
+                </CardContent>
+              )}
             </Card>
           </div>
 

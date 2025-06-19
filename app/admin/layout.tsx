@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { supabase, type Admin } from "@/lib/supabase";
 import { ThemeInitializer } from "@/components/theme-initializer";
+
 import { UserProvider } from "@/contexts/user-context";
 
 export default function DashboardLayout({

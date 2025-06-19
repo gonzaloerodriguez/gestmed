@@ -169,41 +169,7 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/dashboard")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Mis Recetas
-                </h1>
-                <p className="text-muted-foreground">
-                  Gestiona todas tus recetas médicas
-                </p>
-              </div>
-            </div>
-            <Link href="/dashboard/prescriptions/new">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Receta
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -257,7 +223,6 @@ export default function PrescriptionsPage() {
           </Card>
         </div>
 
-        {/* Search and Filters */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Buscar Recetas</CardTitle>
@@ -278,7 +243,6 @@ export default function PrescriptionsPage() {
           </CardContent>
         </Card>
 
-        {/* Prescriptions Table */}
         <Card>
           <CardHeader>
             <CardTitle>Lista de Recetas</CardTitle>
@@ -424,7 +388,6 @@ export default function PrescriptionsPage() {
         </Card>
       </main>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

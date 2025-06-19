@@ -191,38 +191,8 @@ export default function EditPrescriptionPage({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  router.push(`/dashboard/prescriptions/${prescription.id}`)
-                }
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Editar Receta
-                </h1>
-                <p className="text-muted-foreground">
-                  Paciente: {prescription.patient_name}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Información del Médico */}
           <Card>
             <CardHeader>
               <CardTitle>Información del Médico</CardTitle>
