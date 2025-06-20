@@ -17,45 +17,52 @@ export function useAuthGuard(requiredRole?: "admin" | "doctor") {
 
   const checkAuth = async () => {
     try {
+      console.log("🔒 AUTH GUARD: Verificando autenticación...")
+
       const { role, data } = await checkUserRole()
 
-      // Si no está autenticado, redirigir al login
+      // ✅ Si no está autenticado, redirigir al login
       if (role === "unauthenticated" || role === "error") {
+        console.log("❌ AUTH GUARD: No autenticado - redirigiendo a login")
         router.push("/login")
         return
       }
 
-      // Si no tiene rol asignado
+      // ✅ Si no tiene rol asignado
       if (role === "unknown") {
+        console.log("❌ AUTH GUARD: Sin rol - cerrando sesión")
         await supabase.auth.signOut()
         router.push("/?error=no-role")
         return
       }
 
-      // Verificar rol específico si se requiere
+      // ✅ Verificar rol específico si se requiere
       if (requiredRole && role !== requiredRole) {
-        // Si es admin pero requiere doctor, redirigir a admin
+        console.log(`❌ AUTH GUARD: Rol incorrecto. Requiere: ${requiredRole}, Tiene: ${role}`)
+
+        // Redirigir según el rol actual
         if (role === "admin" && requiredRole === "doctor") {
           router.push("/admin")
           return
         }
-        // Si es doctor pero requiere admin, redirigir a dashboard
         if (role === "doctor" && requiredRole === "admin") {
           router.push("/dashboard")
           return
         }
       }
 
-      // Verificaciones específicas para doctores
+      // ✅ Verificaciones específicas para doctores
       if (role === "doctor") {
         const doctor = data as any
+        console.log("👨‍⚕️ AUTH GUARD: Verificando estado del doctor")
 
-        // Verificar si está exento de pago
+        // Obtener usuario autenticado
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser()
 
         if (authUser?.email) {
+          // Verificar si está exento de pago
           const { data: exempted } = await supabase
             .from("exempted_users")
             .select("email")
@@ -64,24 +71,27 @@ export function useAuthGuard(requiredRole?: "admin" | "doctor") {
 
           // Si no está exento y tiene problemas de suscripción
           if (!exempted && (doctor.subscription_status === "expired" || !doctor.is_active)) {
+            console.log("💳 AUTH GUARD: Suscripción expirada - redirigiendo a payment-required")
             router.push("/payment-required")
             return
           }
         }
 
+        console.log("✅ AUTH GUARD: Doctor autorizado")
         setUser(authUser)
         setUserData(doctor)
       } else if (role === "admin") {
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser()
+        console.log("👑 AUTH GUARD: Admin autorizado")
         setUser(authUser)
         setUserData(data)
       }
 
       setLoading(false)
     } catch (error) {
-      console.error("Auth guard error:", error)
+      console.error("❌ AUTH GUARD ERROR:", error)
       router.push("/login")
     }
   }

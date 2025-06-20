@@ -33,13 +33,13 @@ export function SignatureUpload({
   const [error, setError] = useState<string | null>(null);
   const [previewSize, setPreviewSize] = useState(150);
   const [rotation, setRotation] = useState(0);
-  const [refreshKey, setRefreshKey] = useState(0); // Para forzar recarga de imagen
+  const [refreshKey, setRefreshKey] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleFileChange = (file: File | null) => {
     setError(null);
     setSignatureFile(file);
-    setRotation(0); // Resetear rotación
+    setRotation(0);
 
     if (file) {
       // Validar tipo de archivo
@@ -73,7 +73,6 @@ export function SignatureUpload({
     }
   };
 
-  // Función para corregir la orientación de la imagen
   const correctImageOrientation = (dataUrl: string) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -83,17 +82,17 @@ export function SignatureUpload({
 
     const img = new Image();
     img.onload = () => {
-      // Ajustar tamaño del canvas
+      // Ajusta el tamaño del canvas
       canvas.width = img.width;
       canvas.height = img.height;
 
-      // Limpiar canvas
+      // Limpia el canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Dibujar imagen
+      // Dibuja la imagen
       ctx.drawImage(img, 0, 0);
 
-      // Obtener imagen corregida
+      // Obtiene la imagen corregida
       const correctedDataUrl = canvas.toDataURL("image/png");
       setSignaturePreview(correctedDataUrl);
 
@@ -191,7 +190,6 @@ export function SignatureUpload({
       formData.append("file", signatureFile);
       formData.append("userId", user.id);
 
-      // Enviar a nuestro endpoint específico para firmas
       const response = await fetch("/api/upload-signature", {
         method: "POST",
         body: formData,

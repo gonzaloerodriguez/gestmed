@@ -1,16 +1,21 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createAdminClient, createServerClient } from "@/lib/supabase"
 
-// Cliente admin para bypasear RLS
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})
+// // Cliente admin para bypasear RLS
+// const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+//   auth: {
+//     autoRefreshToken: false,
+//     persistSession: false,
+//   },
+// })
 
-// Cliente normal para auth
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+// // Cliente normal para auth
+// const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+// // Cliente admin para bypasear RLS
+const supabaseAdmin = createAdminClient();
+
+// // Cliente normal para auth
+const supabase = createServerClient();
 
 export async function POST(request: NextRequest) {
   try {

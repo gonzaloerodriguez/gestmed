@@ -44,11 +44,6 @@ import {
   Eye,
   UserCheck,
   UserX,
-  Shield,
-  LogOut,
-  //   FileText,
-  //   Activity,
-  //   UserPlus,
 } from "lucide-react";
 import { supabase, type Doctor, type Admin } from "@/lib/supabase";
 import { useAuthGuard } from "@/lib/auth-guard";
@@ -103,7 +98,7 @@ export default function AdminDashboardPage() {
       // Cargar médicos
       await loadDoctors();
     } catch (error: any) {
-      console.error("Error:", error.message);
+      alert("Error cargando la información del admin");
     }
   };
 
@@ -119,7 +114,7 @@ export default function AdminDashboardPage() {
       setDoctors(data || []);
       setFilteredDoctors(data || []);
     } catch (error: any) {
-      console.error("Error loading doctors:", error.message);
+      alert("Error cargando doctor");
     }
   };
 

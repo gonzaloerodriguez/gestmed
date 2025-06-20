@@ -22,6 +22,7 @@ import { usePublicRoute } from "@/lib/public-route-guard";
 export default function LoginPage() {
   const router = useRouter();
   const { loading: routeLoading, canAccess } = usePublicRoute();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -45,7 +46,6 @@ export default function LoginPage() {
     try {
       console.log("🔐 LOGIN: Iniciando autenticación...");
 
-      // Autenticar usuario
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -56,10 +56,10 @@ export default function LoginPage() {
       if (data.user) {
         console.log("✅ LOGIN: Usuario autenticado:", data.user.id);
 
-        // Esperar a que la sesión se establezca completamente
+        // ✅ Esperar a que la sesión se establezca
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Usar auth-utils para redirigir según el rol
+        // ✅ Redirigir según el rol
         console.log("🔍 LOGIN: Verificando roles y redirigiendo...");
         await redirectBasedOnRole(router);
       }
@@ -70,7 +70,7 @@ export default function LoginPage() {
     }
   };
 
-  // Mostrar loading mientras se verifica si puede acceder
+  // ✅ Mostrar loading mientras verifica acceso
   if (routeLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -88,8 +88,7 @@ export default function LoginPage() {
     );
   }
 
-  // Si no puede acceder (ya está autenticado), no mostrar nada
-  // porque ya se está redirigiendo
+  // ✅ Si no puede acceder (ya autenticado), no mostrar nada
   if (!canAccess) {
     return null;
   }
@@ -164,6 +163,173 @@ export default function LoginPage() {
     </div>
   );
 }
+
+// "use client";
+
+// import type React from "react";
+// import { useState } from "react";
+// import Link from "next/link";
+// import { useRouter } from "next/navigation";
+// import { Button } from "@/components/ui/button";
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Stethoscope } from "lucide-react";
+// import { supabase } from "@/lib/supabase";
+// import { redirectBasedOnRole } from "@/lib/auth-utils";
+// import { usePublicRoute } from "@/lib/public-route-guard";
+
+// export default function LoginPage() {
+//   const router = useRouter();
+//   const { loading: routeLoading, canAccess } = usePublicRoute();
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+//   const [formData, setFormData] = useState({
+//     email: "",
+//     password: "",
+//   });
+
+//   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     setFormData({
+//       ...formData,
+//       [e.target.name]: e.target.value,
+//     });
+//     if (error) setError(null);
+//   };
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setError(null);
+
+//     try {
+//       console.log("🔐 LOGIN: Iniciando autenticación...");
+
+//       // Autenticar usuario
+//       const { data, error } = await supabase.auth.signInWithPassword({
+//         email: formData.email,
+//         password: formData.password,
+//       });
+
+//       if (error) throw error;
+
+//       if (data.user) {
+//         console.log("✅ LOGIN: Usuario autenticado:", data.user.id);
+
+//         // Esperar a que la sesión se establezca completamente
+//         await new Promise((resolve) => setTimeout(resolve, 1000));
+
+//         // Usar auth-utils para redirigir según el rol
+//         console.log("🔍 LOGIN: Verificando roles y redirigiendo...");
+//         await redirectBasedOnRole(router);
+//       }
+//     } catch (error: any) {
+//       console.error("❌ LOGIN ERROR:", error);
+//       setError(error.message);
+//       setLoading(false);
+//     }
+//   };
+
+//   // Mostrar loading mientras se verifica si puede acceder
+//   if (routeLoading) {
+//     return (
+//       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+//         <Card className="w-full max-w-md">
+//           <CardContent className="flex items-center justify-center py-8">
+//             <div className="text-center">
+//               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+//               <p className="mt-2 text-sm text-gray-600">
+//                 Verificando sesión...
+//               </p>
+//             </div>
+//           </CardContent>
+//         </Card>
+//       </div>
+//     );
+//   }
+
+//   // Si no puede acceder (ya está autenticado), no mostrar nada
+//   // porque ya se está redirigiendo
+//   if (!canAccess) {
+//     return null;
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+//       <Card className="w-full max-w-md">
+//         <CardHeader className="text-center">
+//           <div className="flex justify-center mb-4">
+//             <Stethoscope className="h-12 w-12 text-blue-600" />
+//           </div>
+//           <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
+//           <CardDescription>Accede a tu cuenta</CardDescription>
+//         </CardHeader>
+//         <CardContent>
+//           <form onSubmit={handleSubmit} className="space-y-4">
+//             <div>
+//               <Label htmlFor="email">Correo Electrónico</Label>
+//               <Input
+//                 id="email"
+//                 name="email"
+//                 type="email"
+//                 required
+//                 value={formData.email}
+//                 onChange={handleInputChange}
+//                 placeholder="tu-email@ejemplo.com"
+//                 disabled={loading}
+//               />
+//             </div>
+
+//             <div>
+//               <Label htmlFor="password">Contraseña</Label>
+//               <Input
+//                 id="password"
+//                 name="password"
+//                 type="password"
+//                 required
+//                 value={formData.password}
+//                 onChange={handleInputChange}
+//                 placeholder="Tu contraseña"
+//                 disabled={loading}
+//               />
+//             </div>
+
+//             {error && (
+//               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
+//                 <strong>Error:</strong> {error}
+//               </div>
+//             )}
+
+//             <Button type="submit" className="w-full" disabled={loading}>
+//               {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
+//             </Button>
+//           </form>
+
+//           <div className="mt-6 text-center space-y-2">
+//             <Link
+//               href="/forgot-password"
+//               className="text-sm text-blue-600 hover:underline block"
+//             >
+//               ¿Olvidaste tu contraseña?
+//             </Link>
+//             <p className="text-sm text-gray-600">
+//               ¿No tienes una cuenta?{" "}
+//               <Link href="/register" className="text-blue-600 hover:underline">
+//                 Registrarse
+//               </Link>
+//             </p>
+//           </div>
+//         </CardContent>
+//       </Card>
+//     </div>
+//   );
+// }
 
 // "use client";
 

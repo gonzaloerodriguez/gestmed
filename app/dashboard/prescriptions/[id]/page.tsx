@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft,
   Edit,
   Download,
   Trash2,
@@ -24,7 +22,6 @@ import {
 } from "lucide-react";
 import { supabase, type Prescription, type Doctor } from "@/lib/supabase";
 import { generatePrescriptionPDF } from "@/lib/pdf-generator";
-import { TestPDFButton } from "@/components/test-pdf-button";
 
 interface PrescriptionDetailPageProps {
   params: Promise<{ id: string }>;
@@ -39,10 +36,6 @@ export default function PrescriptionDetailPage({
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [prescriptionId, setPrescriptionId] = useState<string | null>(null);
 
-  /* useEffect(() => {
-    loadPrescription();
-  }, [params.id]);
- */
   useEffect(() => {
     const resolveParams = async () => {
       try {
@@ -277,7 +270,6 @@ export default function PrescriptionDetailPage({
                 <User className="h-5 w-5 mr-2" />
                 Información del Paciente
               </CardTitle>
-              <TestPDFButton />
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

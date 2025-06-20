@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
+import { logAdminAction } from "@/lib/log-admin"
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,6 +59,11 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase.from("doctors").update(updateData).eq("id", doctorId)
 
     if (updateError) throw updateError
+await logAdminAction({
+  adminId: admin.id,
+  action: action,
+  details: `Admin ${admin.full_name} realizó la acción: ${action} en doctor ${doctor.full_name}`,
+});
 
     // Registrar la acción del admin (opcional - puedes crear una tabla de logs)
     console.log(`Admin ${admin.full_name} performed action: ${action} on doctor ${doctor.full_name}`)
@@ -68,7 +74,6 @@ export async function POST(request: NextRequest) {
       updatedData: updateData,
     })
   } catch (error: any) {
-    console.error("Error in payment verification:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

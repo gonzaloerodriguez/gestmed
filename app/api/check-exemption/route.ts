@@ -1,14 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase"
 
 // Crear cliente de Supabase con service role para bypasear RLS
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})
-
+// const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+//   auth: {
+//     autoRefreshToken: false,
+//     persistSession: false,
+//   },
+// })
+const supabaseAdmin = createAdminClient()
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json()
@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      console.error("Error checking exemption:", error)
       return NextResponse.json({ error: "Error verificando exención" }, { status: 500 })
     }
 
@@ -48,7 +47,6 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Error in check-exemption API:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }

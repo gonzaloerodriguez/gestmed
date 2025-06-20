@@ -6,12 +6,36 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Crear cliente para el servidor
-export const createServerClient = () => {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+// export const createServerClient = () => {
+//   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+// }
+
+// Para operaciones de admin
+export const createAdminClient = (config?: SupabaseConfig) => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        ...config?.auth,
+      },
+    }
+  )
 }
 
+// Para operaciones normales con RLS
+export const createServerClient = (config?: SupabaseConfig) => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    config
+  )
+}
+
+
 // Tipos actualizados para la base de datos
-// Actualizar la interfaz Doctor para reflejar que firma y sello van juntos
 export interface Doctor {
   id: string
   email: string
@@ -20,7 +44,7 @@ export interface Doctor {
   gender: "male" | "female"
   license_number: string
   specialty?: string
-  signature_stamp_url?: string // Cambiar de signature_url y stamp_url a una sola imagen
+  signature_stamp_url?: string 
   document_url?: string
   is_active: boolean
   created_at: string
@@ -155,6 +179,12 @@ export type Consultation = {
   updated_at: string
 }
 
+interface SupabaseConfig {
+  auth?: {
+    autoRefreshToken?: boolean
+    persistSession?: boolean
+  }
+}
 
 // Tipos compuestos para vistas completas
 export type PatientWithRepresentative = Patient & {

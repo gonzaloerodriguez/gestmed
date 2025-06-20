@@ -224,37 +224,7 @@ export default function PaymentHistoryPage() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/dashboard/profile")}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al Perfil
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Historial de Comprobantes
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Todos tus comprobantes de pago subidos
-            </p>
-          </div>
-        </div>
-
         {/* Botón de actualizar más prominente */}
-        <Button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
-          size="lg"
-        >
-          <RefreshCw
-            className={`h-5 w-5 mr-2 ${refreshing ? "animate-spin" : ""}`}
-          />
-          {refreshing ? "Actualizando..." : "Actualizar Enlaces"}
-        </Button>
       </div>
 
       {/* Estadísticas */}
@@ -310,16 +280,29 @@ export default function PaymentHistoryPage() {
 
       {/* Lista de comprobantes */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
-            Comprobantes de Pago
-          </CardTitle>
-          <CardDescription>
-            Historial completo de todos los comprobantes de pago subidos,
-            ordenados por fecha
-          </CardDescription>
-        </CardHeader>
+        <div className="flex items-center justify-between pr-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="h-5 w-5 mr-2" />
+              Comprobantes de Pago
+            </CardTitle>
+            <CardDescription>
+              Historial completo de todos los comprobantes de pago subidos,
+              ordenados por fecha
+            </CardDescription>
+          </CardHeader>
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+            size="lg"
+          >
+            <RefreshCw
+              className={`h-5 w-5 mr-2 ${refreshing ? "animate-spin" : ""}`}
+            />
+            {refreshing ? "Actualizando..." : "Actualizar Enlaces"}
+          </Button>
+        </div>
         <CardContent>
           {paymentProofs.length === 0 ? (
             <div className="text-center py-12">

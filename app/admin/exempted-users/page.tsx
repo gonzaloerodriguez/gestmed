@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Plus, Trash2, Mail, Shield } from "lucide-react";
+import { Plus, Trash2, Mail } from "lucide-react";
 import { supabase, type Admin } from "@/lib/supabase";
 
 interface ExemptedUser {
@@ -80,7 +80,6 @@ export default function ExemptedUsersPage() {
       setAdmin(adminData);
       await loadExemptedUsers();
     } catch (error: any) {
-      console.error("Error:", error);
       router.push("/");
     } finally {
       setLoading(false);
@@ -97,7 +96,7 @@ export default function ExemptedUsersPage() {
       if (error) throw error;
       setExemptedUsers(data || []);
     } catch (error: any) {
-      console.error("Error loading exempted users:", error.message);
+      alert("Error cargando usuarios exentos");
     }
   };
 

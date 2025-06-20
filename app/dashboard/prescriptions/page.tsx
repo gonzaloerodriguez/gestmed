@@ -170,6 +170,14 @@ export default function PrescriptionsPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-end w-full mb-8">
+          <Link href={"/dashboard/prescriptions/new"}>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Receta
+            </Button>
+          </Link>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -177,7 +177,6 @@ export default function PatientsPage() {
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex items-center justify-end w-full mb-8">
         <Button onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4 mr-2" />

@@ -3,9 +3,7 @@ import type { Doctor, Prescription } from "./supabase"
 
 // Función para generar PDF de receta médica
 export async function generatePrescriptionPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {
-  // 🔍 LOG PARA VERIFICAR QUE EL CÓDIGO ACTUALIZADO SE ESTÁ EJECUTANDO
-  console.log("🔄 Generando PDF con código ACTUALIZADO - Versión 2.0")
-  console.log("📋 Doctor:", doctor.full_name, "- Matrícula:", doctor.license_number)
+
  
   // Crear nuevo documento PDF
   const doc = new jsPDF({
@@ -32,7 +30,7 @@ export async function generatePrescriptionPDF(prescription: Prescription, doctor
         : `${doctor.signature_stamp_url}?pdf=${Date.now()}`
 
       signatureImage = await loadImage(imageUrl)
-      console.log("✅ Firma cargada correctamente para PDF:", signatureImage.width, "x", signatureImage.height)
+      
     } catch (error) {
       console.error("❌ Error cargando firma:", error)
     }
@@ -151,8 +149,7 @@ export async function generatePrescriptionPDF(prescription: Prescription, doctor
     yPos += 6 + notesLines.length * 6 + 6
   }
 
-  // 🔍 LOG ANTES DE AGREGAR LA FIRMA
-  console.log("📝 Agregando firma y datos del médico...")
+ 
 
   // Firma y sello
   if (signatureImage) {
@@ -180,7 +177,6 @@ export async function generatePrescriptionPDF(prescription: Prescription, doctor
       // Añadir imagen con rotación correcta
       doc.addImage(base64Img, "PNG", imgX, imgY, imgWidth, imgHeight)
 
-      console.log("✅ Firma añadida al PDF:", imgWidth, "x", imgHeight, "mm")
     } catch (error) {
       console.error("❌ Error añadiendo firma al PDF:", error)
     }
@@ -203,18 +199,13 @@ export async function generatePrescriptionPDF(prescription: Prescription, doctor
   const licenseText = `Mat. ${doctor.license_number}`
   doc.text(licenseText, signatureTextX, pageHeight - margin - 15, { align: "center" })
 
-  // 🔍 LOG PARA CONFIRMAR QUE SE AGREGARON LOS DATOS
-  console.log("✅ Datos agregados al PDF:")
-  console.log("   👨‍⚕️ Nombre:", doctorName)
-  console.log("   🆔 Matrícula:", licenseText)
+
 
   // Pie de página
   doc.setFontSize(8)
   doc.setTextColor(128, 128, 128)
   doc.text("Documento generado digitalmente", pageWidth / 2, pageHeight - 8, { align: "center" })
 
-  // 🔍 LOG FINAL
-  console.log("🎉 PDF generado exitosamente con código ACTUALIZADO")
 
   // Generar blob del PDF
   const pdfBlob = doc.output("blob")
@@ -260,191 +251,3 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-
-/* version 1
-
-import { jsPDF } from "jspdf"
-import type { Doctor, Prescription } from "./supabase"
-
-// Función para generar PDF de receta médica
-export async function generatePrescriptionPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {
-  // Crear nuevo documento PDF
-  const doc = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  })
-
-  // Configurar fuentes
-  doc.setFont("helvetica")
-
-  // Dimensiones de la página
-  const pageWidth = doc.internal.pageSize.getWidth()
-  const pageHeight = doc.internal.pageSize.getHeight()
-  const margin = 20
-
-  // Cargar imagen de firma y sello si existe
-  let signatureImage: HTMLImageElement | null = null
-  if (doctor.signature_stamp_url) {
-    signatureImage = await loadImage(doctor.signature_stamp_url)
-     
-    console.log(signatureImage.src);
-  }
-
-  // Encabezado
-  doc.setFontSize(18)
-  doc.setTextColor(0, 51, 102) // Azul oscuro
-  doc.text(`${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`, margin, margin)
-
-  doc.setFontSize(12)
-  doc.setTextColor(80, 80, 80) // Gris oscuro
-  doc.text(doctor.specialty || "Médico General", margin, margin + 8)
-  doc.text(`Matrícula: ${doctor.license_number}`, margin, margin + 14)
-
-  // Línea divisoria
-  doc.setDrawColor(0, 102, 204) // Azul
-  doc.setLineWidth(0.5)
-  doc.line(margin, margin + 18, pageWidth - margin, margin + 18)
-
-  // Información de la receta
-  doc.setFontSize(14)
-  doc.setTextColor(0, 0, 0) // Negro
-  doc.text("RECETA MÉDICA", pageWidth / 2, margin + 28, { align: "center" })
-
-  // Fecha
-  doc.setFontSize(10)
-  doc.setTextColor(80, 80, 80) // Gris oscuro
-  const formattedDate = new Date(prescription.date_prescribed).toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-  doc.text(`Fecha: ${formattedDate}`, pageWidth - margin, margin + 28, { align: "right" })
-
-  // Información del paciente
-  doc.setFontSize(11)
-  doc.setTextColor(0, 0, 0) // Negro
-  doc.text(`Paciente: ${prescription.patient_name}`, margin, margin + 40)
-
-  if (prescription.patient_age) {
-    doc.text(`Edad: ${prescription.patient_age} años`, margin, margin + 46)
-  }
-
-  if (prescription.patient_cedula) {
-    doc.text(`CI: ${prescription.patient_cedula}`, pageWidth - margin, margin + 40, { align: "right" })
-  }
-
-  // Línea divisoria
-  doc.setDrawColor(200, 200, 200) // Gris claro
-  doc.setLineWidth(0.2)
-  doc.line(margin, margin + 50, pageWidth - margin, margin + 50)
-
-  // Diagnóstico
-  let yPos = margin + 60
-  if (prescription.diagnosis) {
-    doc.setFontSize(11)
-    doc.setFont("helvetica", "bold")
-    doc.text("Diagnóstico:", margin, yPos)
-    doc.setFont("helvetica", "normal")
-
-    // Texto de diagnóstico con saltos de línea
-    const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
-    doc.text(diagnosisLines, margin, yPos + 6)
-
-    yPos += 6 + diagnosisLines.length * 6 + 6
-  }
-
-  // Medicamentos
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.text("Medicamentos:", margin, yPos)
-  doc.setFont("helvetica", "normal")
-
-  // Texto de medicamentos con saltos de línea
-  const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
-  doc.text(medicationLines, margin, yPos + 6)
-
-  yPos += 6 + medicationLines.length * 6 + 6
-
-  // Instrucciones
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.text("Instrucciones:", margin, yPos)
-  doc.setFont("helvetica", "normal")
-
-  // Texto de instrucciones con saltos de línea
-  const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
-  doc.text(instructionLines, margin, yPos + 6)
-
-  yPos += 6 + instructionLines.length * 6 + 6
-
-  // Notas adicionales
-  if (prescription.notes) {
-    doc.setFontSize(11)
-    doc.setFont("helvetica", "bold")
-    doc.text("Notas:", margin, yPos)
-    doc.setFont("helvetica", "normal")
-
-    // Texto de notas con saltos de línea
-    const notesLines = doc.splitTextToSize(prescription.notes, pageWidth - margin * 2)
-    doc.text(notesLines, margin, yPos + 6)
-
-    yPos += 6 + notesLines.length * 6 + 6
-  }
-
-  // Firma y sello original
-  if (signatureImage) {
-
-    // Definir dimensiones máximas para la firma
-      const maxWidth = 50 // Ancho máximo en mm
-      const maxHeight = 20 // Altura máxima en mm
-    // Calcular dimensiones para mantener la proporción
-    let imgWidth =  maxWidth//50
-   let imgHeight = (signatureImage.height * imgWidth) / signatureImage.width
-    // const imgWidth =  maxWidth//50
-    // const imgHeight = (signatureImage.height * imgWidth) / signatureImage.width
-
-  
-
-    // Posicionar en la parte inferior derecha
-    const imgX = pageWidth - margin - imgWidth
-    const imgY = pageHeight - margin - imgHeight - 20
-
-    // Añadir imagen
-    doc.addImage(signatureImage, "PNG", imgX, imgY, imgWidth, imgHeight)
-  
-  }
-
-  
-
-  // Nombre del médico debajo de la firma
-  doc.setFontSize(10)
-  doc.setTextColor(0, 0, 0)
-  doc.text(
-    `${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`,
-    pageWidth - margin - 30,
-    pageHeight - margin - 10,
-    { align: "center" },
-  )
-
-  // Pie de página
-  doc.setFontSize(8)
-  doc.setTextColor(128, 128, 128)
-  doc.text("Documento generado digitalmente", pageWidth / 2, pageHeight - 10, { align: "center" })
-
-  // Generar blob del PDF
-  const pdfBlob = doc.output("blob")
-  return pdfBlob
-}
-
-// Función auxiliar para cargar imágenes
-function loadImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = "Anonymous" // Importante para CORS
-    img.onload = () => resolve(img)
-    img.onerror = (e) => reject(e)
-    img.src = url
-  })
-}
- */

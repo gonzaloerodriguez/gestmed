@@ -6,16 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  ArrowLeft,
-  User,
   Mail,
   Calendar,
   Shield,
@@ -53,7 +43,6 @@ interface DoctorDetailPageProps {
 }
 
 export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
-  // Unwrap params using React.use()
   const { id } = use(params);
 
   const router = useRouter();
@@ -119,7 +108,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
       await loadDoctor();
       await loadPrescriptions();
     } catch (error: any) {
-      console.error("Error:", error.message);
       router.push("/admin");
     } finally {
       setLoading(false);
@@ -145,16 +133,12 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
         await generatePaymentProofSignedUrl(data.payment_proof_url);
       }
     } catch (error: any) {
-      console.error("Error loading doctor:", error.message);
       router.push("/admin");
     }
   };
 
   const loadPrescriptions = async () => {
     try {
-      console.log("🔍 Loading prescriptions for doctor:", id);
-
-      // MÉTODO CORREGIDO: Usar filter en lugar de eq para mejor compatibilidad con UUID
       const { data: prescriptionsData, error: prescriptionsError } =
         await supabase
           .from("prescriptions")
@@ -164,14 +148,12 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
           .limit(10);
 
       if (prescriptionsError) {
-        console.error("Error loading prescriptions:", prescriptionsError);
         throw prescriptionsError;
       }
 
-      console.log("✅ Prescriptions loaded:", prescriptionsData?.length || 0);
       setPrescriptions(prescriptionsData || []);
 
-      // Calcular estadísticas usando el mismo método
+      // Calcular estadísticas
       const { count: totalPrescriptions } = await supabase
         .from("prescriptions")
         .select("*", { count: "exact", head: true })
@@ -203,14 +185,8 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
         activePrescriptions: activePrescriptions || 0,
         thisMonthPrescriptions: thisMonthPrescriptions || 0,
       }));
-
-      console.log("📈 Stats calculated:", {
-        totalPrescriptions,
-        activePrescriptions,
-        thisMonthPrescriptions,
-      });
     } catch (error: any) {
-      console.error("❌ Error loading prescriptions:", error.message);
+      alert("Error cargando las recetas");
     }
   };
   const loadConsultationStats = async (doctorId: string) => {
@@ -248,10 +224,7 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
         consultationsThisMonth: thisMonth || 0,
       }));
     } catch (error: any) {
-      console.error(
-        "❌ Error cargando estadísticas de consultas:",
-        error.message
-      );
+      alert("Error cargando estadísticas de consultas");
     }
   };
 
@@ -270,11 +243,9 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
         const { signedUrl } = await response.json();
         setPaymentProofSignedUrl(signedUrl);
       } else {
-        console.error("Error generating signed URL");
         setPaymentProofSignedUrl(null);
       }
     } catch (error) {
-      console.error("Error generating signed URL:", error);
       setPaymentProofSignedUrl(null);
     } finally {
       setGeneratingUrl(false);
@@ -386,7 +357,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
         setEmailCheckStatus("not-exempted");
       }
     } catch (error: any) {
-      console.error("Error checking email exemption:", error);
       setIsEmailExempted(false);
       setEmailCheckStatus("error");
     } finally {
@@ -424,7 +394,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl bg-background mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 gap-8">
-          {/* Información Personal */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
@@ -502,7 +471,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
               </CardContent>
             </Card>
 
-            {/* Documentos */}
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -554,7 +522,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
               </CardContent>
             </Card>
 
-            {/* Payment Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -655,7 +622,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
                     )}
                   </div>
 
-                  {/* Payment Proof */}
                   {doctor.payment_proof_url && (
                     <div className="border-t pt-4">
                       <label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -702,7 +668,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
                           </div>
                         </div>
 
-                        {/* Verification Actions */}
                         {doctor.subscription_status ===
                           "pending_verification" && (
                           <div className="flex space-x-2">
@@ -744,9 +709,7 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
             </Card>
           </div>
 
-          {/* Estadísticas y Recetas */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Estadísticas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -835,7 +798,6 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
         </div>
       </main>
 
-      {/* Payment Verification Dialog */}
       <AlertDialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

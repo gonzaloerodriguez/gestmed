@@ -10,50 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  Users,
-  Search,
-  MoreVertical,
-  Eye,
-  UserCheck,
-  UserX,
-  Shield,
-  LogOut,
-  Calendar,
-  TrendingUp,
-  BarChart3,
-} from "lucide-react";
+import { Users, Calendar, TrendingUp, BarChart3 } from "lucide-react";
 import { supabase, type Doctor, type Admin } from "@/lib/supabase";
 import { useAuthGuard } from "@/lib/auth-guard";
 import {
@@ -156,7 +118,7 @@ export default function AdminDashboardPage() {
       await loadStats();
       await loadConsultationStats();
     } catch (error: any) {
-      console.error("Error:", error.message);
+      alert("Error cargando la información del admin");
     }
   };
 
@@ -172,7 +134,7 @@ export default function AdminDashboardPage() {
       setDoctors(data || []);
       setFilteredDoctors(data || []);
     } catch (error: any) {
-      console.error("Error loading doctors:", error.message);
+      alert("Error cargando los doctores");
     }
   };
 
@@ -206,7 +168,7 @@ export default function AdminDashboardPage() {
         totalPrescriptions: totalPrescriptions || 0,
       });
     } catch (error: any) {
-      console.error("Error loading stats:", error.message);
+      alert("Error cargando estadisticas");
     }
   };
 
@@ -316,46 +278,8 @@ export default function AdminDashboardPage() {
         consultationTrend,
       });
     } catch (error: any) {
-      console.error("Error loading consultation stats:", error.message);
+      alert("Error cargando las estadisticas de consultas");
     }
-  };
-
-  const handleDoctorAction = async () => {
-    if (!selectedDoctor || !actionType) return;
-
-    try {
-      const newStatus = actionType === "activate";
-
-      const { error } = await supabase
-        .from("doctors")
-        .update({ is_active: newStatus })
-        .eq("id", selectedDoctor.id);
-
-      if (error) throw error;
-
-      // Actualizar lista local
-      setDoctors((prev) =>
-        prev.map((doctor) =>
-          doctor.id === selectedDoctor.id
-            ? { ...doctor, is_active: newStatus }
-            : doctor
-        )
-      );
-
-      setActionDialogOpen(false);
-      setSelectedDoctor(null);
-      setActionType(null);
-
-      // Recargar estadísticas
-      await loadStats();
-    } catch (error: any) {
-      alert("Error al actualizar médico: " + error.message);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
   };
 
   const doctorStatusData = [
