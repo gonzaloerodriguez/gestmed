@@ -41,7 +41,7 @@ export function usePublicRoute() {
           console.log("👨‍⚕️ PUBLIC ROUTE: Doctor detectado - verificando estado")
 
           // Verificar si está exento de pago
-          const { supabase } = await import("./supabase")
+          const { supabase } = await import("./supabase/supabase")
           const {
             data: { user },
           } = await supabase.auth.getUser()

@@ -31,14 +31,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2, Mail } from "lucide-react";
-import { supabase, type Admin } from "@/lib/supabase";
-
-interface ExemptedUser {
-  id: string;
-  email: string;
-  created_at: string;
-  created_by: string;
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { Admin } from "@/lib/supabase/types/admin";
+import type { ExemptedUser } from "@/lib/supabase/types/exempteduser";
 
 export default function ExemptedUsersPage() {
   const router = useRouter();

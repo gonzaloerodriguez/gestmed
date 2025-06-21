@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase"
+import { createAdminClient } from "@/lib/supabase/supabase"
 
 // Crear cliente de Supabase con service key para operaciones de storage
 const supabase = createAdminClient();

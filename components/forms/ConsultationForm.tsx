@@ -13,16 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, Stethoscope, Activity } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import type { Patient, VitalSigns } from "@/lib/supabase";
-
-interface ConsultationFormProps {
-  medicalHistoryId: string;
-  doctorId: string;
-  patient: Patient;
-  onSuccess: () => void;
-  onCancel: () => void;
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { VitalSigns } from "@/lib/supabase/types/consultations";
+import type { ConsultationFormProps } from "@/lib/supabase/types/forms/consultationform";
 
 export function ConsultationForm({
   medicalHistoryId,

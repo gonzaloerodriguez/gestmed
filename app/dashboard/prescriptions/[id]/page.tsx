@@ -20,8 +20,10 @@ import {
   StickyNote,
   Loader2,
 } from "lucide-react";
-import { supabase, type Prescription, type Doctor } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { generatePrescriptionPDF } from "@/lib/pdf-generator";
+import { Prescription } from "@/lib/supabase/types/prescription";
+import { Doctor } from "@/lib/supabase/types/doctor";
 
 interface PrescriptionDetailPageProps {
   params: Promise<{ id: string }>;

@@ -14,12 +14,7 @@ import {
   Download,
   Eye,
 } from "lucide-react";
-import {
-  supabase,
-  type Doctor,
-  type Prescription,
-  type Admin,
-} from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,10 +32,10 @@ import {
   Clock,
   RefreshCw,
 } from "lucide-react";
-
-interface DoctorDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+import type { Admin } from "@/lib/supabase/types/admin";
+import type { Doctor } from "@/lib/supabase/types/doctor";
+import type { Prescription } from "@/lib/supabase/types/prescription";
+import { DoctorDetailPageProps } from "@/lib/supabase/types/doctordetailpage";
 
 export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
   const { id } = use(params);

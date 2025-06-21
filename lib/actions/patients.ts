@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase/supabase"
 
 export async function updatePatient(patientId: string, updates: any) {
   const { error } = await supabase.from("patients").update(updates).eq("id", patientId)

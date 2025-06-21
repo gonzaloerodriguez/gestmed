@@ -22,14 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, User, UserCheck } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import type { Patient } from "@/lib/supabase";
-
-interface PatientFormProps {
-  doctorId: string;
-  onSuccess: (patient: Patient) => void;
-  onCancel: () => void;
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { PatientFormProps } from "@/lib/supabase/types/forms/patientform";
 
 export function PatientForm({
   doctorId,

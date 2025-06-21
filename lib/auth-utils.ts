@@ -1,5 +1,6 @@
-import { supabase } from "./supabase"
-import type { Admin, Doctor } from "./supabase"
+import { supabase } from "./supabase/supabase"
+import type { Admin } from "./supabase/types/admin"
+import type { Doctor } from "./supabase/types/doctor"
 
 /**
  * Verifica el rol del usuario actual

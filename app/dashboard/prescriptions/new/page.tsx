@@ -14,9 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, AlertCircle } from "lucide-react";
-import { supabase, type Doctor } from "@/lib/supabase";
+import { Save, AlertCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase/supabase";
 import { PatientSelector } from "@/components/patient-selector";
+import type { Doctor } from "@/lib/supabase/types/doctor";
 
 export default function NewPrescriptionPage() {
   const router = useRouter();

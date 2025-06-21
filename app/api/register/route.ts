@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase'
+import { createAdminClient } from '@/lib/supabase/supabase'
 import { NextResponse } from 'next/server'
 
 // Solo accesible desde el backend

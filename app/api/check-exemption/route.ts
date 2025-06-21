@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase"
+import { createAdminClient } from "@/lib/supabase/supabase"
 
 // Crear cliente de Supabase con service role para bypasear RLS
 // const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {

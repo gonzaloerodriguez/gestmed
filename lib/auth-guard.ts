@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { checkUserRole } from "./auth-utils"
-import { supabase } from "./supabase"
+import { supabase } from "./supabase/supabase"
 
 export function useAuthGuard(requiredRole?: "admin" | "doctor") {
   const router = useRouter()

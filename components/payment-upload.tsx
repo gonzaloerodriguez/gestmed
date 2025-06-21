@@ -14,13 +14,8 @@ import {
   AlertTriangle,
   History,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-interface PaymentUploadProps {
-  doctorId: string;
-  currentPaymentUrl: string | null;
-  onSuccess: () => void;
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { PaymentUploadProps } from "@/lib/supabase/types/paymentupload";
 
 export function PaymentUpload({
   doctorId,

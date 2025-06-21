@@ -2,43 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-
-interface VitalSigns {
-  weight?: number | null;
-  height?: number | null;
-  bp?: string | null;
-  temp?: number | null;
-  heart_rate?: number | null;
-  respiratory_rate?: number | null;
-}
-
-interface Consultation {
-  id: string;
-  consultation_date: string;
-  reason_for_visit: string;
-  symptoms?: string;
-  diagnosis?: string;
-  treatment_plan?: string;
-  physical_examination?: string;
-  notes?: string;
-  follow_up_date?: string;
-  vital_signs?: VitalSigns;
-  created_at: string;
-  updated_at: string;
-  patient?: {
-    full_name: string;
-    cedula: string;
-  };
-}
+import { supabase } from "@/lib/supabase/supabase";
+import {
+  ConsultationWithPatient,
+  VitalSigns,
+} from "@/lib/supabase/types/consultations";
 
 export default function ConsultationDetailPage() {
   const { id } = useParams();
   const router = useRouter();
 
-  const [consultation, setConsultation] = useState<Consultation | null>(null);
+  const [consultation, setConsultation] =
+    useState<ConsultationWithPatient | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,6 +36,8 @@ export default function ConsultationDetailPage() {
         .select(
           `
           id,
+          medical_history_id,
+          doctor_id,
           consultation_date,
           reason_for_visit,
           symptoms,
@@ -99,6 +76,8 @@ export default function ConsultationDetailPage() {
 
       setConsultation({
         id: data.id,
+        medical_history_id: data.medical_history_id,
+        doctor_id: data.doctor_id,
         consultation_date: data.consultation_date,
         reason_for_visit: data.reason_for_visit,
         symptoms: data.symptoms,

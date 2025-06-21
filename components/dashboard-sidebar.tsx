@@ -2,8 +2,7 @@
 
 import type React from "react";
 import { useUser } from "@/contexts/user-context";
-import type { Doctor, Admin } from "@/lib/supabase";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import {
   Home,
   Users,
@@ -26,14 +25,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeInitializer } from "@/components/theme-initializer";
-
-interface DashboardSidebarProps {
-  children: React.ReactNode;
-  pageTitle?: string;
-  pageDescription?: string;
-  showBackButton?: boolean;
-  backUrl?: string;
-}
+import type { Admin } from "@/lib/supabase/types/admin";
+import type { Doctor } from "@/lib/supabase/types/doctor";
+import { DashboardSidebarProps } from "@/lib/supabase/types/dashboardsidebar";
 
 export function DashboardSidebar({
   children,

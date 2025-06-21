@@ -1,12 +1,7 @@
 "use client";
 
+import type { ThemeSelectorProps } from "@/lib/supabase/types/themeselector";
 import { UnifiedThemeSelector } from "./unified-theme-selector";
-
-interface ThemeSelectorProps {
-  doctorId: string;
-  currentTheme?: string;
-  onThemeChange?: (theme: string) => void;
-}
 
 export function ThemeSelector({
   doctorId,

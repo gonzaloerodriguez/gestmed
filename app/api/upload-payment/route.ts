@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import { createAdminClient } from "@/lib/supabase"
+import { createAdminClient } from "@/lib/supabase/supabase"
 
 // Importación condicional de Sharp para evitar errores si no está instalado
 let sharp: any = null

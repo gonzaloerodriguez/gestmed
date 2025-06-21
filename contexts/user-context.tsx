@@ -7,8 +7,9 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { supabase } from "@/lib/supabase";
-import type { Doctor, Admin } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
+import type { Admin } from "@/lib/supabase/types/admin";
+import type { Doctor } from "@/lib/supabase/types/doctor";
 
 type User = Doctor | Admin;
 type UserType = "doctor" | "admin";

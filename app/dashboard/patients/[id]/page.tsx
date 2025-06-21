@@ -36,17 +36,17 @@ import {
   AlertTriangle,
   Activity,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { ConsultationForm } from "@/components/forms/ConsultationForm";
 import { PrescriptionFromConsultation } from "@/components/prescription-from-consultation";
 import type {
   Patient,
   PatientRepresentative,
   MedicalHistory,
-  Consultation,
-  Prescription,
-  Doctor,
-} from "@/lib/supabase";
+} from "@/lib/supabase/supabase";
+import type { Doctor } from "@/lib/supabase/types/doctor";
+import type { Consultation } from "@/lib/supabase/types/consultations";
+import type { Prescription } from "@/lib/supabase/types/prescription";
 
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;

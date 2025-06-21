@@ -48,8 +48,10 @@ import {
   Activity,
   UserPlus,
 } from "lucide-react";
-import { supabase, type Doctor, type Admin } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useAuthGuard } from "@/lib/auth-guard";
+import { Admin } from "@/lib/supabase/types/admin";
+import type { Doctor } from "@/lib/supabase/types/doctor";
 
 export default function AdminDashboardPage() {
   const router = useRouter();

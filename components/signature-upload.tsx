@@ -12,13 +12,8 @@ import {
   RotateCcw,
   RefreshCw,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-interface SignatureUploadProps {
-  doctorId: string;
-  currentSignatureUrl: string | null;
-  onSuccess: () => void;
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { SignatureUploadProps } from "@/lib/supabase/types/signatureupload";
 
 export function SignatureUpload({
   doctorId,

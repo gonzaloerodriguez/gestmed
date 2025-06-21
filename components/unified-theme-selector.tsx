@@ -10,19 +10,8 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Palette, Check } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-interface Theme {
-  id: string;
-  name: string;
-  description: string;
-  colors: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    background: string;
-  };
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { Theme } from "@/lib/supabase/types/theme";
 
 const themes: Theme[] = [
   {

@@ -15,13 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreditCard, Upload, AlertTriangle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-interface PaymentReminderProps {
-  doctorId: string;
-  subscriptionStatus: string;
-  nextPaymentDate: string | null;
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { PaymentReminderProps } from "@/lib/supabase/types/paymentreminder";
 
 export function PaymentReminder({
   doctorId,

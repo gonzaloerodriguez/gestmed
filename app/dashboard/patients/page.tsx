@@ -31,9 +31,10 @@ import {
   MapPin,
   UserCheck,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { PatientForm } from "@/components/forms/PatientForm";
-import type { Doctor, Patient } from "@/lib/supabase";
+import type { Patient } from "@/lib/supabase/supabase";
+import type { Doctor } from "@/lib/supabase/types/doctor";
 
 export default function PatientsPage() {
   const router = useRouter();

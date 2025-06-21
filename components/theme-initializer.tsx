@@ -1,12 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-
-interface ThemeInitializerProps {
-  userId?: string;
-  userType?: "doctor" | "admin";
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { ThemeInitializerProps } from "@/lib/supabase/types/themeinitializer";
 
 export function ThemeInitializer({ userId, userType }: ThemeInitializerProps) {
   useEffect(() => {

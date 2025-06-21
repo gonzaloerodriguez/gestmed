@@ -16,7 +16,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Users, Calendar, TrendingUp, BarChart3 } from "lucide-react";
-import { supabase, type Doctor, type Admin } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useAuthGuard } from "@/lib/auth-guard";
 import {
   Bar,
@@ -31,24 +31,9 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-
-interface ConsultationStats {
-  totalConsultations: number;
-  weeklyConsultations: number;
-  monthlyConsultations: number;
-  dailyConsultations: Array<{
-    date: string;
-    count: number;
-  }>;
-  consultationsByDoctor: Array<{
-    doctorName: string;
-    count: number;
-  }>;
-  consultationTrend: Array<{
-    period: string;
-    consultations: number;
-  }>;
-}
+import type { Admin } from "@/lib/supabase/types/admin";
+import type { Doctor } from "@/lib/supabase/types/doctor";
+import type { ConsultationStats } from "@/lib/supabase/types/consultations";
 
 export default function AdminDashboardPage() {
   const router = useRouter();

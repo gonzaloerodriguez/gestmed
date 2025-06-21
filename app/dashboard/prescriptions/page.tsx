@@ -49,7 +49,8 @@ import {
   Calendar,
   User,
 } from "lucide-react";
-import { supabase, type Prescription } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
+import type { Prescription } from "@/lib/supabase/types/prescription";
 
 export default function PrescriptionsPage() {
   const router = useRouter();

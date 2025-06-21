@@ -26,21 +26,20 @@ import {
   Save,
   Eye,
   EyeOff,
-  ArrowLeft,
   FileText,
   FilePenLineIcon as Signature,
-  Mail,
-  Calendar,
   Shield,
   Trash2,
   CreditCard,
   Palette,
 } from "lucide-react";
-import { supabase, type Doctor, type MedicalSpecialty } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { SignatureUpload } from "@/components/signature-upload";
 import { PaymentUpload } from "@/components/payment-upload";
 import { ThemeSelector } from "@/components/theme-selector";
 import { useUser } from "@/contexts/user-context";
+import type { Doctor } from "@/lib/supabase/types/doctor";
+import type { MedicalSpecialty } from "@/lib/supabase/types/medicalspeciality";
 
 export default function ProfilePage() {
   const router = useRouter();

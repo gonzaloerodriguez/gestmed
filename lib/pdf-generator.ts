@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf"
-import type { Doctor, Prescription } from "./supabase"
+import type { Prescription } from "./supabase/types/prescription"
+import type { Doctor } from "./supabase/types/doctor"
 
 // Función para generar PDF de receta médica
 export async function generatePrescriptionPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {

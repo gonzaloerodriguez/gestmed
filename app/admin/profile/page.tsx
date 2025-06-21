@@ -39,18 +39,11 @@ import {
   Download,
   Palette,
 } from "lucide-react";
-import { supabase, type Admin } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useAuthGuard } from "@/lib/auth-guard";
 import { AdminThemeSelector } from "@/components/admin-theme-selector";
 import { useUser } from "@/contexts/user-context";
-
-interface AdminActivity {
-  id: string;
-  action: string;
-  timestamp: string;
-  details: string;
-  ip_address?: string;
-}
+import type { Admin, AdminActivity } from "@/lib/supabase/types/admin";
 
 export default function AdminProfilePage() {
   const router = useRouter();

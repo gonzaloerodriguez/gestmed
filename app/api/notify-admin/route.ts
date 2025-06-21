@@ -1,45 +1,6 @@
-// import { type NextRequest, NextResponse } from "next/server"
-// import { createServerClient } from "@/lib/supabase"
-
-// export async function POST(request: NextRequest) {
-//   try {
-//     const { type, doctorId, doctorName, doctorEmail, paymentProofUrl } = await request.json()
-//     const supabase = createServerClient()
-
-//     // Obtener todos los administradores
-//     const { data: admins, error: adminsError } = await supabase.from("admins").select("email, full_name")
-
-//     if (adminsError) throw adminsError
-
-//     // Crear notificación en la base de datos (opcional)
-//     const notificationData = {
-//       type,
-//       doctor_id: doctorId,
-//       message:
-//         type === "new_registration"
-//           ? `Nuevo registro: ${doctorName} (${doctorEmail})`
-//           : `Comprobante de pago subido por: ${doctorName}`,
-//       payment_proof_url: paymentProofUrl || null,
-//       created_at: new Date().toISOString(),
-//     }
-
-//     // Aquí podrías insertar en una tabla de notificaciones si la tienes
-//     // await supabase.from("notifications").insert(notificationData)
-
-//     // Por ahora, solo registramos en logs
-//     console.log("Admin notification:", notificationData)
-
-//     return NextResponse.json({ success: true })
-//   } catch (error: any) {
-//     console.error("Error sending admin notification:", error)
-//     return NextResponse.json({ error: error.message }, { status: 500 })
-//   }
-// }
-
-
 import { type NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase/supabase"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 

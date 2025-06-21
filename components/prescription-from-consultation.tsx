@@ -14,18 +14,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Save, FileText, Calendar, User } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { generatePrescriptionPDF } from "@/lib/pdf-generator";
-import type { Patient, Doctor, Consultation } from "@/lib/supabase";
-
-interface PrescriptionFromConsultationProps {
-  consultation: Consultation;
-  patient: Patient;
-  doctor: Doctor;
-  medicalHistoryId: string;
-  onSuccess: () => void;
-  onCancel: () => void;
-}
+import type { PrescriptionFromConsultationProps } from "@/lib/supabase/types/forms/prescriptionform";
 
 export function PrescriptionFromConsultation({
   consultation,

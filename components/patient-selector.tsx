@@ -27,23 +27,9 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown, Plus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
-
-interface Patient {
-  id: string;
-  full_name: string;
-  cedula: string;
-  phone?: string;
-  email?: string;
-  birth_date?: string;
-  address?: string;
-}
-
-interface PatientSelectorProps {
-  onPatientSelect: (patient: Patient | null) => void;
-  selectedPatient: Patient | null;
-  allowOneTime?: boolean; // Para recetas de una sola vez
-}
+import { supabase } from "@/lib/supabase/supabase";
+import type { PatientSelectorItem } from "@/lib/supabase/types/patient";
+import type { PatientSelectorProps } from "@/lib/supabase/types/patientselector";
 
 export function PatientSelector({
   onPatientSelect,
@@ -51,7 +37,7 @@ export function PatientSelector({
   allowOneTime = false,
 }: PatientSelectorProps) {
   const [open, setOpen] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<PatientSelectorItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [showNewPatientDialog, setShowNewPatientDialog] = useState(false);
   const [savePatient, setSavePatient] = useState(true); // Por defecto guarda el paciente
@@ -104,7 +90,7 @@ export function PatientSelector({
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
 
-      let newPatient: Patient;
+      let newPatient: PatientSelectorItem;
 
       if (savePatient) {
         const { data, error } = await supabase
@@ -122,7 +108,7 @@ export function PatientSelector({
           .single();
 
         if (error) throw error;
-        newPatient = data as Patient;
+        newPatient = data as PatientSelectorItem;
 
         // Agrega a la lista local
         setPatients((prev) => [newPatient, ...prev]);

@@ -27,7 +27,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  ArrowLeft,
   FileText,
   ImageIcon,
   Eye,
@@ -39,7 +38,8 @@ import {
   Trash2,
   MoreVertical,
 } from "lucide-react";
-import { supabase, type Doctor } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/supabase";
+import type { Doctor } from "@/lib/supabase/types/doctor";
 
 interface PaymentProof {
   name: string;

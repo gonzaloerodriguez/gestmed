@@ -20,37 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ArrowLeft,
-  Plus,
-  Search,
-  Eye,
-  Calendar,
-  User,
-  Stethoscope,
-} from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-interface Consultation {
-  id: string;
-  consultation_date: string;
-  reason_for_visit: string;
-  diagnosis?: string;
-  created_at: string;
-  medical_history: {
-    patient: {
-      full_name: string;
-      cedula: string;
-    };
-  };
-}
+import { Plus, Search, Eye, Calendar, User, Stethoscope } from "lucide-react";
+import { supabase } from "@/lib/supabase/supabase";
+import type { ConsultationWithPatientFlat } from "@/lib/supabase/types/consultations";
 
 export default function ConsultationsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [consultations, setConsultations] = useState<
+    ConsultationWithPatientFlat[]
+  >([]);
   const [filteredConsultations, setFilteredConsultations] = useState<
-    Consultation[]
+    ConsultationWithPatientFlat[]
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -124,19 +105,21 @@ export default function ConsultationsPage() {
       if (error) throw error;
 
       // Transformar los datos para que coincidan con la interfaz
-      const transformedData: Consultation[] = (data || []).map((item: any) => ({
-        id: item.id,
-        consultation_date: item.consultation_date,
-        reason_for_visit: item.reason_for_visit,
-        diagnosis: item.diagnosis,
-        created_at: item.created_at,
-        medical_history: {
-          patient: {
-            full_name: item.medical_history.patient.full_name,
-            cedula: item.medical_history.patient.cedula,
+      const transformedData: ConsultationWithPatientFlat[] = (data || []).map(
+        (item: any) => ({
+          id: item.id,
+          consultation_date: item.consultation_date,
+          reason_for_visit: item.reason_for_visit,
+          diagnosis: item.diagnosis,
+          created_at: item.created_at,
+          medical_history: {
+            patient: {
+              full_name: item.medical_history.patient.full_name,
+              cedula: item.medical_history.patient.cedula,
+            },
           },
-        },
-      }));
+        })
+      );
 
       setConsultations(transformedData);
       setFilteredConsultations(transformedData);

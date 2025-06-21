@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase"
+import { createAdminClient } from "@/lib/supabase/supabase"
 
 const supabase = createAdminClient()
 
