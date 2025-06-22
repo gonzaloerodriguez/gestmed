@@ -1,17 +1,28 @@
-export const logAdminAction = async ({
-  adminId,
-  action,
-  details,
-}: {
+import { createAdminClient } from "@/lib/supabase/supabase";
+
+interface LogParams {
   adminId: string;
   action: string;
   details: string;
-}) => {
-  const userAgent = navigator.userAgent;
+  userAgent?: string;
+  ip?: string;
+}
 
-  await fetch("/api/log-admin-action", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ adminId, action, details, userAgent }),
+
+export const logAdminAction = async ({
+  adminId,
+  action,
+  details, userAgent,
+  ip,
+}: LogParams) => {
+  const supabase = createAdminClient();
+
+ await supabase.from("admin_activity_logs").insert({
+    admin_id: adminId,
+    action,
+    details,
+    user_agent: userAgent ?? "unknown",
+    ip_adress: ip ?? "unknown",
+    created_at: new Date().toISOString(),
   });
 };

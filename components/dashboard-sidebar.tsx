@@ -407,7 +407,7 @@ export function DashboardSidebar({
                     {(user as Doctor).subscription_status === "active" &&
                       "Suscripción Activa"}
                     {(user as Doctor).subscription_status ===
-                      "pending_verification" && "Pago Pendiente"}
+                      "pending_verification" && "Verificando Pago"}
                     {(user as Doctor).subscription_status === "expired" &&
                       "Suscripción Vencida"}
                   </Badge>

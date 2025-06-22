@@ -35,7 +35,9 @@ import {
 import type { Admin } from "@/lib/supabase/types/admin";
 import type { Doctor } from "@/lib/supabase/types/doctor";
 import type { Prescription } from "@/lib/supabase/types/prescription";
-import { DoctorDetailPageProps } from "@/lib/supabase/types/doctordetailpage";
+import type { DoctorDetailPageProps } from "@/lib/supabase/types/doctordetailpage";
+// import { getSignedUrl } from "@/lib/utils/signed-url";
+import { parseStorageUrl } from "@/lib/utils/signed-url";
 
 export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
   const { id } = use(params);
@@ -120,6 +122,8 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
       if (error) throw error;
 
       setDoctor(data);
+      console.log(data.id);
+
       await loadConsultationStats(data.id);
       await checkEmailExemption(data.email);
 
@@ -228,10 +232,13 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
 
     setGeneratingUrl(true);
     try {
+      const info = parseStorageUrl(filePath);
+      if (!info) throw new Error("Invalid file path");
+
       const response = await fetch("/api/get-signed-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filePath }),
+        body: JSON.stringify({ filePath: info.path, bucket: info.bucket }),
       });
 
       if (response.ok) {
@@ -255,7 +262,9 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
 
   const handlePaymentVerification = async (action: "approve" | "reject") => {
     if (!doctor || !admin) return;
-
+    console.log(doctor.id);
+    console.log(admin.id);
+    console.log("doctor.id", doctor?.id);
     setProcessingPayment(true);
     try {
       const response = await fetch("/api/admin/verify-payment", {
@@ -297,30 +306,66 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
     setPaymentDialogOpen(true);
   };
 
-  const handleViewPaymentProof = () => {
-    if (paymentProofSignedUrl) {
-      window.open(paymentProofSignedUrl, "_blank");
-    } else {
+  const handleViewPaymentProof = async () => {
+    if (!paymentProofSignedUrl) {
       alert("Generando enlace de visualización...");
       if (doctor?.payment_proof_url) {
         generatePaymentProofSignedUrl(doctor.payment_proof_url);
+        await generatePaymentProofSignedUrl(doctor.payment_proof_url);
       }
+      return;
+    }
+
+    try {
+      const response = await fetch(paymentProofSignedUrl);
+      if (!response.ok) {
+        alert(
+          'El enlace ha expirado. Usa "Actualizar" para obtener uno nuevo.'
+        );
+        return;
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Error al abrir el comprobante");
     }
   };
 
-  const handleDownloadPaymentProof = () => {
-    if (paymentProofSignedUrl) {
+  const handleDownloadPaymentProof = async () => {
+    if (!paymentProofSignedUrl) {
+      alert("Generando enlace de descarga...");
+      if (doctor?.payment_proof_url) {
+        await generatePaymentProofSignedUrl(doctor.payment_proof_url);
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(paymentProofSignedUrl);
+      if (!response.ok) {
+        alert(
+          'El enlace ha expirado. Usa "Actualizar" para obtener uno nuevo.'
+        );
+        return;
+      }
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = paymentProofSignedUrl;
-      link.download = `comprobante_pago_${doctor?.full_name || "doctor"}.${doctor?.payment_proof_url?.includes(".pdf") ? "pdf" : "jpg"}`;
+      link.href = url;
+      link.download = `comprobante_pago_${
+        doctor?.full_name || "doctor"
+      }.${doctor?.payment_proof_url?.includes(".pdf") ? "pdf" : "jpg"}`;
+      link.style.display = "none";
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } else {
-      alert("Generando enlace de descarga...");
-      if (doctor?.payment_proof_url) {
-        generatePaymentProofSignedUrl(doctor.payment_proof_url);
-      }
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Error descargando comprobante");
     }
   };
 

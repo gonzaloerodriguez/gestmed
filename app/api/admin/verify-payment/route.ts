@@ -1,21 +1,34 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/supabase"
+import { createAdminClient } from "@/lib/supabase/supabase"
 import { logAdminAction } from "@/lib/log-admin"
 
 export async function POST(request: NextRequest) {
   try {
     const { doctorId, action, adminId } = await request.json()
-    const supabase = createServerClient()
+
+    
+if (!doctorId || typeof doctorId !== "string") {
+  return NextResponse.json({ error: "ID de doctor inválido" }, { status: 400 })
+}
+if (!adminId || typeof adminId !== "string") {
+  return NextResponse.json({ error: "ID de admin inválido" }, { status: 400 })
+}
+    const supabase = createAdminClient()
 
     // Verificar que quien hace la petición es admin
     const { data: admin, error: adminError } = await supabase.from("admins").select("*").eq("id", adminId).single()
-
+console.log("Resultado admin:", admin);
+console.log("Error admin:", adminError);
     if (adminError || !admin) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
 
     // Obtener datos actuales del médico
     const { data: doctor, error: doctorError } = await supabase.from("doctors").select("*").eq("id", doctorId).single()
+console.log("Resultado doctor:", doctor);
+console.log("Error doctor:", doctorError);
+console.log("doctorId recibido:", doctorId);
+
 
     if (doctorError || !doctor) {
       return NextResponse.json({ error: "Médico no encontrado" }, { status: 404 })
@@ -56,15 +69,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Actualizar médico
-    const { error: updateError } = await supabase.from("doctors").update(updateData).eq("id", doctorId)
+    
+ const { error: updateError } = await supabase
+      .from("doctors")
+      .update(updateData)
+      .eq("id", doctorId)
+
 
     if (updateError) throw updateError
-await logAdminAction({
-  adminId: admin.id,
-  action: action,
-  details: `Admin ${admin.full_name} realizó la acción: ${action} en doctor ${doctor.full_name}`,
-});
 
+
+ const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown"
+
+    const userAgent = request.headers.get("user-agent") || "unknown"
+
+    await logAdminAction({
+      adminId: admin.id,
+      action: action,
+      details: `Admin ${admin.full_name} realizó la acción: ${action} en doctor ${doctor.full_name}`,
+      userAgent,
+      ip,
+    })
     // Registrar la acción del admin (opcional - puedes crear una tabla de logs)
     console.log(`Admin ${admin.full_name} performed action: ${action} on doctor ${doctor.full_name}`)
 

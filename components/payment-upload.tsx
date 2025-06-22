@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import type { PaymentUploadProps } from "@/lib/supabase/types/paymentupload";
+import { parseStorageUrl } from "@/lib/utils/signed-url";
 
 export function PaymentUpload({
   doctorId,
@@ -39,24 +40,37 @@ export function PaymentUpload({
   // Generar signed URL para el archivo actual
   useEffect(() => {
     const generateSignedUrl = async () => {
-      if (currentPaymentUrl && currentPaymentUrl.includes("payment-proofs")) {
+      // if (currentPaymentUrl && currentPaymentUrl.includes("payment-proofs")) {
+      if (currentPaymentUrl) {
         try {
           // Extraer la ruta del archivo de la URL
-          const urlParts = currentPaymentUrl.split("/payment-proofs/");
-          if (urlParts.length > 1) {
-            const filePath = urlParts[1].split("?")[0];
+          // const urlParts = currentPaymentUrl.split("/payment-proofs/");
+          // if (urlParts.length > 1) {
+          //   const filePath = urlParts[1].split("?")[0];
 
-            const response = await fetch("/api/get-signed-url", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ filePath }),
-            });
+          //   const response = await fetch("/api/get-signed-url", {
+          //     method: "POST",
+          //     headers: { "Content-Type": "application/json" },
+          //     body: JSON.stringify({ filePath }),
+          //   });
 
-            if (response.ok) {
-              const { signedUrl: newSignedUrl } = await response.json();
-              setSignedUrl(newSignedUrl);
-              setPaymentPreview(newSignedUrl);
-            }
+          //   if (response.ok) {
+          //     const { signedUrl: newSignedUrl } = await response.json();
+          //     setSignedUrl(newSignedUrl);
+          //     setPaymentPreview(newSignedUrl);
+          const info = parseStorageUrl(currentPaymentUrl);
+          if (!info) return;
+
+          const response = await fetch("/api/get-signed-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filePath: info.path, bucket: info.bucket }),
+          });
+
+          if (response.ok) {
+            const { signedUrl: newSignedUrl } = await response.json();
+            setSignedUrl(newSignedUrl);
+            setPaymentPreview(newSignedUrl);
           }
         } catch (error) {
           console.error("Error generating signed URL:", error);
@@ -139,6 +153,7 @@ export function PaymentUpload({
       }
 
       const result = await response.json();
+      console.log("Respuesta del upload-payment API:", result);
 
       const { data: currentDoctor, error: fetchError } = await supabase
         .from("doctors")
@@ -195,7 +210,7 @@ export function PaymentUpload({
       const { error: updateError } = await supabase
         .from("doctors")
         .update({
-          payment_proof_url: result.data.publicUrl,
+          payment_proof_url: result.filePath,
           subscription_status: newSubscriptionStatus,
           is_active: shouldActivate,
           last_payment_date: now.toISOString(),

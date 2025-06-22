@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/supabase";
+import { logAdminAction } from "@/lib/log-admin";
 
-// Cliente admin para bypass de RLS
-const supabaseAdmin = createAdminClient();
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,13 +11,13 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ||
       "unknown";
 
-    await supabaseAdmin.from("admin_activity_logs").insert({
-      admin_id: adminId,
+    
+    await logAdminAction({
+      adminId,
       action,
       details,
-      ip_adress: ip,
-      user_agent: userAgent || "unknown",
-      created_at: new Date().toISOString(),
+       userAgent,
+      ip,
     });
 
     return NextResponse.json({ success: true });

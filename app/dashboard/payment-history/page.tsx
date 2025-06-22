@@ -40,16 +40,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import type { Doctor } from "@/lib/supabase/types/doctor";
-
-interface PaymentProof {
-  name: string;
-  size: number;
-  created_at: string;
-  updated_at: string;
-  filePath: string;
-  signedUrl: string | null;
-  fileType: "pdf" | "image";
-}
+import type { PaymentProof } from "@/lib/supabase/types/paymentupload";
 
 export default function PaymentHistoryPage() {
   const router = useRouter();
@@ -177,20 +168,53 @@ export default function PaymentHistoryPage() {
     return <ImageIcon className="h-5 w-5 text-blue-500" />;
   };
 
-  const handleViewFile = (signedUrl: string | null) => {
-    if (signedUrl) {
-      window.open(signedUrl, "_blank");
+  const handleViewFile = async (signedUrl: string | null) => {
+    if (!signedUrl) return;
+
+    try {
+      const response = await fetch(signedUrl);
+      if (!response.ok) {
+        alert(
+          'El enlace ha expirado. Usa "Actualizar Enlaces" para obtener uno nuevo.'
+        );
+        return;
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Error al abrir el archivo");
     }
   };
 
-  const handleDownloadFile = (signedUrl: string | null, fileName: string) => {
-    if (signedUrl) {
+  const handleDownloadFile = async (
+    signedUrl: string | null,
+    fileName: string
+  ) => {
+    if (!signedUrl) return;
+
+    try {
+      const response = await fetch(signedUrl);
+      if (!response.ok) {
+        alert(
+          'El enlace ha expirado. Usa "Actualizar Enlaces" para obtener uno nuevo.'
+        );
+        return;
+      }
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = signedUrl;
+      link.href = url;
       link.download = fileName;
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Error al descargar el archivo");
     }
   };
 

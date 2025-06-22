@@ -97,6 +97,10 @@ export default function ProfilePage() {
         specialty: doctorData.specialty || "",
         license_number: doctorData.license_number,
       });
+      console.log(
+        "Valor actual de doctor.payment_proof_url:",
+        doctorData.payment_proof_url
+      );
     } catch (error: any) {
       console.error("Error loading profile:", error.message);
     } finally {
