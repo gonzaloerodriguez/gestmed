@@ -24,42 +24,46 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, User, UserCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import type { PatientFormProps } from "@/lib/supabase/types/forms/patientform";
+import type { Patient } from "@/lib/supabase/types/patient";
 
 export function PatientForm({
   doctorId,
   onSuccess,
   onCancel,
+  patient,
+  representative,
+  medicalHistory,
 }: PatientFormProps) {
   const [saving, setSaving] = useState(false);
-  const [hasRepresentative, setHasRepresentative] = useState(false);
+  const [hasRepresentative, setHasRepresentative] = useState(!!representative);
 
   // Datos del paciente
   const [patientData, setPatientData] = useState({
-    full_name: "",
-    cedula: "",
-    phone: "",
-    address: "",
-    birth_date: "",
+    full_name: patient?.full_name || "",
+    cedula: patient?.cedula || "",
+    phone: patient?.phone || "",
+    address: patient?.address || "",
+    birth_date: patient?.birth_date || "",
   });
 
   // Datos del representante
   const [representativeData, setRepresentativeData] = useState({
-    full_name: "",
-    relationship: "",
-    cedula: "",
-    phone: "",
-    email: "",
-    address: "",
+    full_name: representative?.full_name || "",
+    relationship: representative?.relationship || "",
+    cedula: representative?.cedula || "",
+    phone: representative?.phone || "",
+    email: representative?.email || "",
+    address: representative?.address || "",
   });
 
   // Datos de historia clínica inicial
   const [medicalData, setMedicalData] = useState({
-    blood_type: "",
-    allergies: "",
-    chronic_conditions: "",
-    current_medications: "",
-    family_history: "",
-    notes: "",
+    blood_type: medicalHistory?.blood_type || "",
+    allergies: medicalHistory?.allergies || "",
+    chronic_conditions: medicalHistory?.chronic_conditions || "",
+    current_medications: medicalHistory?.current_medications || "",
+    family_history: medicalHistory?.family_history || "",
+    notes: medicalHistory?.notes || "",
   });
 
   const handlePatientChange = (field: string, value: string) => {
@@ -108,43 +112,84 @@ export function PatientForm({
     setSaving(true);
 
     try {
-      // 1. Crear el paciente
-      const { data: patient, error: patientError } = await supabase
-        .from("patients")
-        .insert({
-          doctor_id: doctorId,
-          full_name: patientData.full_name,
-          cedula: patientData.cedula || null,
-          phone: patientData.phone || null,
-          address: patientData.address || null,
-          birth_date: patientData.birth_date || null,
-          is_active: true,
-        })
-        .select()
-        .single();
+      let currentPatient = patient as Patient | null;
+      if (patient) {
+        // Actualizar paciente existente
+        const { data, error } = await supabase
+          .from("patients")
+          .update({
+            full_name: patientData.full_name,
+            cedula: patientData.cedula || null,
+            phone: patientData.phone || null,
+            address: patientData.address || null,
+            birth_date: patientData.birth_date || null,
+          })
+          .eq("id", patient.id)
+          .select()
+          .single();
+        if (error) throw error;
+        currentPatient = data;
+      } else {
+        // Crear nuevo paciente
+        const { data, error } = await supabase
+          .from("patients")
+          .insert({
+            doctor_id: doctorId,
+            full_name: patientData.full_name,
+            cedula: patientData.cedula || null,
+            phone: patientData.phone || null,
+            address: patientData.address || null,
+            birth_date: patientData.birth_date || null,
+            is_active: true,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        currentPatient = data;
+      }
 
-      if (patientError) throw patientError;
-
+      if (!currentPatient) throw new Error("No se pudo obtener paciente");
       // 2. Crear representante si es necesario
       if (hasRepresentative && representativeData.full_name.trim()) {
-        const { error: representativeError } = await supabase
+        if (representative) {
+          const { error } = await supabase
+            .from("patient_representatives")
+            .update({
+              full_name: representativeData.full_name,
+              relationship: representativeData.relationship,
+              cedula: representativeData.cedula || null,
+              phone: representativeData.phone || null,
+              email: representativeData.email || null,
+              address: representativeData.address || null,
+            })
+            .eq("id", representative.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("patient_representatives")
+            .insert({
+              patient_id: currentPatient.id,
+              full_name: representativeData.full_name,
+              relationship: representativeData.relationship,
+              cedula: representativeData.cedula || null,
+              phone: representativeData.phone || null,
+              email: representativeData.email || null,
+              address: representativeData.address || null,
+              is_primary: true,
+            });
+          if (error) throw error;
+        }
+      } else if (representative) {
+        // Eliminar representante existente si se desmarca
+        const { error } = await supabase
           .from("patient_representatives")
-          .insert({
-            patient_id: patient.id,
-            full_name: representativeData.full_name,
-            relationship: representativeData.relationship,
-            cedula: representativeData.cedula || null,
-            phone: representativeData.phone || null,
-            email: representativeData.email || null,
-            address: representativeData.address || null,
-            is_primary: true,
-          });
-
-        if (representativeError) throw representativeError;
+          .delete()
+          .eq("id", representative.id);
+        if (error) throw error;
       }
 
       // 3. Actualizar historia clínica (se crea automáticamente por trigger)
-      // Esperar un poco para que el trigger se ejecute
+
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const { error: historyError } = await supabase
@@ -157,15 +202,14 @@ export function PatientForm({
           family_history: medicalData.family_history || null,
           notes: medicalData.notes || null,
         })
-        .eq("patient_id", patient.id);
+        .eq("patient_id", currentPatient.id);
 
       if (historyError) {
-        console.warn("Error actualizando historia clínica:", historyError);
-        // No lanzar error, la historia se puede actualizar después
+        console.warn("Error actualizando historia clínica:");
       }
 
-      alert("Paciente creado exitosamente");
-      onSuccess(patient);
+      alert(patient ? "Paciente actualizado" : "Paciente creado exitosamente");
+      onSuccess(currentPatient);
     } catch (error: any) {
       console.error("Error creando paciente:", error);
       alert("Error creando paciente: " + error.message);
@@ -174,23 +218,54 @@ export function PatientForm({
     }
   };
 
+  const [currentStep, setCurrentStep] = useState("patient");
+  const steps = ["patient", "representative", "medical"] as const;
+
+  const handleNext = () => {
+    const idx = steps.indexOf(currentStep as (typeof steps)[number]);
+    if (idx < steps.length - 1) {
+      setCurrentStep(steps[idx + 1]);
+    }
+  };
+
+  const stepIndex = steps.indexOf(currentStep as (typeof steps)[number]);
+  const progress = ((stepIndex + 1) / steps.length) * 100;
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center">
           <User className="h-5 w-5 mr-2" />
-          Nuevo Paciente
+          {patient ? "Editar Paciente" : "Nuevo Paciente"}
         </CardTitle>
         <CardDescription>
-          Crear un nuevo paciente con su historia clínica inicial
+          {patient
+            ? "Actualizar la información del paciente"
+            : "Crear un nuevo paciente con su historia clínica inicial"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="patient" className="space-y-6">
+        {/* <Tabs defaultValue="patient" className="space-y-6"> */}
+        <div className="mb-4">
+          <div className="h-2 bg-gray-200 rounded">
+            <div
+              className="bg-blue-600 h-full rounded transition-all"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-center mt-2">
+            Paso {stepIndex + 1} de {steps.length}
+          </p>
+        </div>
+        <Tabs
+          value={currentStep}
+          onValueChange={setCurrentStep}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="patient">Datos del Paciente</TabsTrigger>
-            <TabsTrigger value="representative">Representante</TabsTrigger>
-            <TabsTrigger value="medical">Historia Clínica</TabsTrigger>
+            <TabsTrigger value="patient">1. Datos del Paciente</TabsTrigger>
+            <TabsTrigger value="representative">2. Representante</TabsTrigger>
+            <TabsTrigger value="medical">3. Historia Clínica</TabsTrigger>
           </TabsList>
 
           {/* Tab: Datos del Paciente */}
@@ -498,10 +573,20 @@ export function PatientForm({
 
         {/* Botones de acción */}
         <div className="flex space-x-4 mt-6">
-          <Button onClick={savePatient} disabled={saving} className="flex-1">
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Guardando..." : "Crear Paciente"}
-          </Button>
+          {currentStep === "medical" ? (
+            <Button onClick={savePatient} disabled={saving} className="flex-1">
+              <Save className="h-4 w-4 mr-2" />
+              {saving
+                ? "Guardando..."
+                : patient
+                  ? "Guardar Cambios"
+                  : "Crear Paciente"}
+            </Button>
+          ) : (
+            <Button onClick={handleNext} className="flex-1">
+              Siguiente
+            </Button>
+          )}
           <Button variant="outline" onClick={onCancel} disabled={saving}>
             Cancelar
           </Button>

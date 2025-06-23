@@ -118,7 +118,7 @@ export function DashboardSidebar({
   const doctorQuickActions = [
     {
       name: "Nuevo Paciente",
-      href: "/dashboard/patients?action=new",
+      href: "/dashboard/patients/new",
       icon: Plus,
       color: "text-green-600",
     },

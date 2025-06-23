@@ -33,8 +33,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import { PatientForm } from "@/components/forms/PatientForm";
-import type { Patient } from "@/lib/supabase/supabase";
 import type { Doctor } from "@/lib/supabase/types/doctor";
+import type { Patient } from "@/lib/supabase/types/patient";
 
 export default function PatientsPage() {
   const router = useRouter();
@@ -44,15 +44,15 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showForm, setShowForm] = useState(false);
+  // const [showForm, setShowForm] = useState(false);
 
   // Verificar si se debe mostrar el formulario desde el dashboard
-  useEffect(() => {
-    const action = searchParams.get("action");
-    if (action === "new") {
-      setShowForm(true);
-    }
-  }, [searchParams]);
+  // useEffect(() => {
+  //   const action = searchParams.get("action");
+  //   if (action === "new") {
+  //     setShowForm(true);
+  //   }
+  // }, [searchParams]);
 
   useEffect(() => {
     loadDoctor();
@@ -143,12 +143,12 @@ export default function PatientsPage() {
     return age;
   };
 
-  const handlePatientCreated = (patient: Patient) => {
-    setShowForm(false);
-    // Limpiar el parámetro de la URL
-    router.replace("/dashboard/patients");
-    loadPatients();
-  };
+  // const handlePatientCreated = (patient: Patient) => {
+  //   setShowForm(false);
+  //   // Limpiar el parámetro de la URL
+  //   router.replace("/dashboard/patients");
+  //   loadPatients();
+  // };
 
   if (loading) {
     return (
@@ -161,25 +161,25 @@ export default function PatientsPage() {
     );
   }
 
-  if (showForm) {
-    return (
-      <div className="p-6">
-        <PatientForm
-          doctorId={doctor!.id}
-          onSuccess={handlePatientCreated}
-          onCancel={() => {
-            setShowForm(false);
-            router.replace("/dashboard/patients");
-          }}
-        />
-      </div>
-    );
-  }
+  // if (showForm) {
+  //   return (
+  //     <div className="p-6">
+  //       <PatientForm
+  //         doctorId={doctor!.id}
+  //         onSuccess={handlePatientCreated}
+  //         onCancel={() => {
+  //           setShowForm(false);
+  //           router.replace("/dashboard/patients");
+  //         }}
+  //       />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-end w-full mb-8">
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => router.push("/dashboard/patients/new")}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Paciente
         </Button>
@@ -298,7 +298,10 @@ export default function PatientsPage() {
                   : "No tienes pacientes registrados"}
               </p>
               {!searchTerm && (
-                <Button onClick={() => setShowForm(true)} className="mt-4">
+                <Button
+                  onClick={() => router.push("/dashboard/patients/new")}
+                  className="mt-4"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Primer Paciente
                 </Button>
