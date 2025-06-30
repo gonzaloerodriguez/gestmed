@@ -18,6 +18,7 @@ import {
   UserPlus,
   ArrowLeft,
   Settings,
+  Archive,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -71,6 +72,12 @@ export function DashboardSidebar({
       href: "/dashboard/prescriptions",
       icon: FileText,
       current: pathname.startsWith("/dashboard/prescriptions"),
+    },
+    {
+      name: "Archivo",
+      href: "/dashboard/archived",
+      icon: Archive,
+      current: pathname.startsWith("/dashboard/archived"),
     },
     {
       name: "Mi Perfil",
@@ -265,6 +272,12 @@ export function DashboardSidebar({
     if (pathname.includes("/prescriptions")) {
       return { title: "Recetas", description: "Gestión de recetas médicas" };
     }
+    if (pathname.includes("/archived")) {
+      return {
+        title: "Elementos archivados",
+        description: "Gestión de pacientes, consultas y recetas archivadas",
+      };
+    }
 
     if (pathname.includes("/statistics")) {
       return {
@@ -317,20 +330,31 @@ export function DashboardSidebar({
     pathname.includes("/exempted-users") ||
     pathname.includes("/consultations") ||
     pathname.includes("/doctors") ||
-    pathname.includes("/payment-history")
+    pathname.includes("/payment-history") ||
+    pathname.includes("/archived")
       ? true
       : false;
 
   const getBackUrl = () => {
     if (pathname) {
+      const isInArchive =
+        pathname.includes("/dashboard/archived/patients") ||
+        pathname.includes("/dashboard/archived/consultations") ||
+        pathname.includes("/dashboard/archived/prescriptions");
+
+      if (isInArchive) {
+        return "/dashboard/archived";
+      }
+
       const parts = pathname.split("/").filter(Boolean); // elimina ""
       parts.pop(); // elimina la última parte del path
 
-      console.log(`/${parts.join("/")}`);
       return `/${parts.join("/")}`;
     }
+
     return userType === "doctor" ? "/dashboard" : "/admin";
   };
+
   console.log(user.id);
 
   return (

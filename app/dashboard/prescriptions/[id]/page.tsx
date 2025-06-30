@@ -38,6 +38,8 @@ import {
   Copy,
   MessageCircle,
   ChevronDown,
+  Share,
+  Share2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import {
@@ -335,7 +337,7 @@ Mat. ${doctor.license_number}`;
                     ) : (
                       <>
                         <Download className="h-4 w-4 mr-2" />
-                        Descargar
+
                         <ChevronDown className="h-4 w-4 ml-1" />
                       </>
                     )}
@@ -374,8 +376,8 @@ Mat. ${doctor.license_number}`;
                         </>
                       ) : (
                         <>
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          WhatsApp
+                          <Share2 className="h-4 w-4 mr-2" />
+
                           <ChevronDown className="h-4 w-4 ml-1" />
                         </>
                       )}
@@ -386,13 +388,13 @@ Mat. ${doctor.license_number}`;
                       onClick={() => handleShareWhatsApp("complete")}
                     >
                       <FileText className="h-4 w-4 mr-2" />
-                      Enviar Receta Completa
+                      Enviar Receta Completa vía WhatsApp
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleShareWhatsApp("instructions")}
                     >
                       <ClipboardList className="h-4 w-4 mr-2" />
-                      Enviar Solo Instrucciones
+                      Enviar Solo Instrucciones vía WhatsApp
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

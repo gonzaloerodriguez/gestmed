@@ -134,64 +134,93 @@ async function generatePrescriptionPage(doc: jsPDF, prescription: Prescription, 
   doc.setLineWidth(0.2)
   doc.line(margin, margin + 50, pageWidth - margin, margin + 50)
 
-  // Diagnóstico
-  let yPos = margin + 60
-  if (prescription.diagnosis) {
-    doc.setFontSize(11)
-    doc.setFont("helvetica", "bold")
-    doc.text("Diagnóstico:", margin, yPos)
-    doc.setFont("helvetica", "normal")
 
-    const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
-    doc.text(diagnosisLines, margin, yPos + 6)
-    yPos += 6 + diagnosisLines.length * 6 + 6
-  }
 
-  // Medicamentos
+   
+// Medicamentos
+let yPos = margin + 60
+
+doc.setFontSize(11)
+doc.setFont("helvetica", "bold")
+doc.text("Medicamentos:", margin, yPos)
+doc.setFont("helvetica", "normal")
+
+const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
+doc.text(medicationLines, margin, yPos + 6)
+yPos += 6 + medicationLines.length * 6 + 6
+
+// Diagnóstico
+if (prescription.diagnosis) {
   doc.setFontSize(11)
   doc.setFont("helvetica", "bold")
-  doc.text("Medicamentos:", margin, yPos)
+  doc.text("Diagnóstico:", margin, yPos)
   doc.setFont("helvetica", "normal")
 
-  const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
-  doc.text(medicationLines, margin, yPos + 6)
-  yPos += 6 + medicationLines.length * 6 + 6
+  const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
+  doc.text(diagnosisLines, margin, yPos + 6)
+  yPos += 6 + diagnosisLines.length * 6 + 6
+}
+
+//   // Diagnóstico
+//   let yPos = margin + 60
+  
+//   if (prescription.diagnosis) {
+//     doc.setFontSize(11)
+//     doc.setFont("helvetica", "bold")
+//     doc.text("Diagnóstico:", margin, yPos)
+//     doc.setFont("helvetica", "normal")
+
+//     const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
+//     doc.text(diagnosisLines, margin, yPos + 6)
+//     yPos += 6 + diagnosisLines.length * 6 + 6
+//   }
+//  // Medicamentos
+//   doc.setFontSize(11)
+//   doc.setFont("helvetica", "bold")
+//   doc.text("Medicamentos:", margin, yPos)
+//   doc.setFont("helvetica", "normal")
+
+
+
+//   const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
+//   doc.text(medicationLines, margin, yPos + 6)
+//   yPos += 6 + medicationLines.length * 6 + 6
 
   // Instrucciones (versión resumida en la primera página)
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.text("Instrucciones:", margin, yPos)
-  doc.setFont("helvetica", "normal")
+  // doc.setFontSize(11)
+  // doc.setFont("helvetica", "bold")
+  // doc.text("Instrucciones:", margin, yPos)
+  // doc.setFont("helvetica", "normal")
 
-  const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
-  // Limitar a las primeras 3 líneas en la primera página
-  const limitedInstructions = instructionLines.slice(0, 3)
-  doc.text(limitedInstructions, margin, yPos + 6)
+  // const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
+  // // Limitar a las primeras 3 líneas en la primera página
+  // const limitedInstructions = instructionLines.slice(0, 3)
+  // doc.text(limitedInstructions, margin, yPos + 6)
 
-  if (instructionLines.length > 3) {
-    doc.setFontSize(9)
-    doc.setTextColor(100, 100, 100)
-    doc.text(
-      "(Ver instrucciones completas en la siguiente página)",
-      margin,
-      yPos + 6 + limitedInstructions.length * 6 + 3,
-    )
-  }
+  // if (instructionLines.length > 3) {
+  //   doc.setFontSize(9)
+  //   doc.setTextColor(100, 100, 100)
+  //   doc.text(
+  //     "(Ver instrucciones completas en la siguiente página)",
+  //     margin,
+  //     yPos + 6 + limitedInstructions.length * 6 + 3,
+  //   )
+  // }
 
-  yPos += 6 + limitedInstructions.length * 6 + 12
+  // yPos += 6 + limitedInstructions.length * 6 + 12
 
   // Notas adicionales
-  if (prescription.notes) {
-    doc.setFontSize(11)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(0, 0, 0)
-    doc.text("Notas:", margin, yPos)
-    doc.setFont("helvetica", "normal")
+  // if (prescription.notes) {
+  //   doc.setFontSize(11)
+  //   doc.setFont("helvetica", "bold")
+  //   doc.setTextColor(0, 0, 0)
+  //   doc.text("Notas:", margin, yPos)
+  //   doc.setFont("helvetica", "normal")
 
-    const notesLines = doc.splitTextToSize(prescription.notes, pageWidth - margin * 2)
-    doc.text(notesLines, margin, yPos + 6)
-    yPos += 6 + notesLines.length * 6 + 6
-  }
+  //   const notesLines = doc.splitTextToSize(prescription.notes, pageWidth - margin * 2)
+  //   doc.text(notesLines, margin, yPos + 6)
+  //   yPos += 6 + notesLines.length * 6 + 6
+  // }
 
   // Firma y sello
   if (signatureImage) {

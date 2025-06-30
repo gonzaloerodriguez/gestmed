@@ -358,7 +358,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   if (showConsultationForm) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ConsultationForm
           medicalHistoryId={medicalHistory.id}
           doctorId={doctor.id}
@@ -372,7 +372,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   if (showPrescriptionForm && selectedConsultation) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <PrescriptionFromConsultation
           consultation={selectedConsultation}
           patient={patient}
@@ -389,7 +389,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8 mx-4">
         <div>
