@@ -10,7 +10,8 @@ export interface Prescription {
   patient_cedula?: string
   patient_phone?: string
   patient_address?: string
-  diagnosis?: string
+  diagnosis: string //le saque el ?
+  allergies: string //le saque el ?
   medications: string
   instructions: string
   date_prescribed: string

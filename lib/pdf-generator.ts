@@ -6,25 +6,20 @@ import type { Doctor } from "./supabase/types/doctor"
 export function formatPhoneForWhatsApp(phone: string): string {
   if (!phone) return ""
 
-  // Remover espacios, guiones y otros caracteres
-  const cleanPhone = phone.replace(/[\s\-$$$$]/g, "")
+  const cleanPhone = phone.replace(/[\s\-()]/g, "")
 
-  // Si empieza con 09, convertir a formato internacional ecuatoriano
   if (cleanPhone.startsWith("09")) {
     return "593" + cleanPhone.substring(1)
   }
 
-  // Si empieza con +593, remover el +
   if (cleanPhone.startsWith("+593")) {
     return cleanPhone.substring(1)
   }
 
-  // Si ya empieza con 593, devolverlo tal como está
   if (cleanPhone.startsWith("593")) {
     return cleanPhone
   }
 
-  // Para otros casos, asumir que es ecuatoriano y agregar código de país
   return "593" + cleanPhone
 }
 
@@ -34,6 +29,18 @@ export function generateWhatsAppURL(phone: string, message: string): string {
   const encodedMessage = encodeURIComponent(message)
   return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`
 }
+
+// Función para generar PDF completo (receta + instrucciones)
+// export async function generatePrescriptionPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {
+//   const doc = new jsPDF({
+//     orientation: "portrait",
+//     unit: "mm",
+//     format: "a4",
+//   })
+
+//   await generatePrescriptionPage(doc, prescription, doctor)
+//   return doc.output("blob")
+// }
 
 // Función para generar PDF completo (receta + instrucciones)
 export async function generatePrescriptionPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {
@@ -53,6 +60,9 @@ export async function generatePrescriptionPDF(prescription: Prescription, doctor
   return doc.output("blob")
 }
 
+
+
+
 // Función para generar PDF solo de instrucciones
 export async function generateInstructionsPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {
   const doc = new jsPDF({
@@ -65,7 +75,7 @@ export async function generateInstructionsPDF(prescription: Prescription, doctor
   return doc.output("blob")
 }
 
-// Función para generar la página de receta completa
+// Función principal para generar la receta (basada en la estructura de la imagen)
 async function generatePrescriptionPage(doc: jsPDF, prescription: Prescription, doctor: Doctor) {
   doc.setFont("helvetica")
 
@@ -82,145 +92,117 @@ async function generatePrescriptionPage(doc: jsPDF, prescription: Prescription, 
         : `${doctor.signature_stamp_url}?pdf=${Date.now()}`
       signatureImage = await loadImage(imageUrl)
     } catch (error) {
-      console.error("❌ Error cargando firma:", error)
+      console.error("Error cargando firma:", error)
     }
   }
 
-  // Encabezado
-  doc.setFontSize(18)
-  doc.setTextColor(0, 51, 102)
-  doc.text(`${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`, margin, margin)
+  // Encabezado del médico (centrado)
+  doc.setFontSize(16)
+  doc.setTextColor(0, 0, 0)
+  doc.setFont("helvetica", "bold")
+  doc.text(`${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`, pageWidth / 2, margin, {
+    align: "center",
+  })
 
   doc.setFontSize(12)
-  doc.setTextColor(80, 80, 80)
-  doc.text(doctor.specialty || "Médico General", margin, margin + 8)
-  doc.text(`Matrícula: ${doctor.license_number}`, margin, margin + 14)
+  doc.setFont("helvetica", "normal")
+  doc.text(doctor.specialty || "Médico General", pageWidth / 2, margin + 6, { align: "center" })
+  doc.text(`Registro Profesional: ${doctor.license_number}`, pageWidth / 2, margin + 12, { align: "center" })
 
   // Línea divisoria
-  doc.setDrawColor(0, 102, 204)
+  doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.5)
   doc.line(margin, margin + 18, pageWidth - margin, margin + 18)
 
-  // Título
-  doc.setFontSize(14)
-  doc.setTextColor(0, 0, 0)
-  doc.text("RECETA MÉDICA", pageWidth / 2, margin + 28, { align: "center" })
-
-  // Fecha
+  // Fecha (esquina superior derecha)
   doc.setFontSize(10)
-  doc.setTextColor(80, 80, 80)
   const formattedDate = new Date(prescription.date_prescribed).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
-    month: "long",
-    day: "numeric",
   })
   doc.text(`Fecha: ${formattedDate}`, pageWidth - margin, margin + 28, { align: "right" })
 
   // Información del paciente
-  doc.setFontSize(11)
-  doc.setTextColor(0, 0, 0)
-  doc.text(`Paciente: ${prescription.patient_name}`, margin, margin + 40)
-
-  if (prescription.patient_age) {
-    doc.text(`Edad: ${prescription.patient_age} años`, margin, margin + 46)
-  }
-
-  if (prescription.patient_cedula) {
-    doc.text(`CI: ${prescription.patient_cedula}`, pageWidth - margin, margin + 40, { align: "right" })
-  }
-
-  // Línea divisoria
-  doc.setDrawColor(200, 200, 200)
-  doc.setLineWidth(0.2)
-  doc.line(margin, margin + 50, pageWidth - margin, margin + 50)
-
-
-
-   
-// Medicamentos
-let yPos = margin + 60
-
-doc.setFontSize(11)
-doc.setFont("helvetica", "bold")
-doc.text("Medicamentos:", margin, yPos)
-doc.setFont("helvetica", "normal")
-
-const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
-doc.text(medicationLines, margin, yPos + 6)
-yPos += 6 + medicationLines.length * 6 + 6
-
-// Diagnóstico
-if (prescription.diagnosis) {
+  let yPos = margin + 40
   doc.setFontSize(11)
   doc.setFont("helvetica", "bold")
-  doc.text("Diagnóstico:", margin, yPos)
+  doc.text("PACIENTE:", margin, yPos)
   doc.setFont("helvetica", "normal")
+  doc.text(prescription.patient_name, margin + 25, yPos)
 
+  yPos += 6
+  doc.setFont("helvetica", "bold")
+  doc.text("EDAD:", margin, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(`${prescription.patient_age} años`, margin + 18, yPos)
+
+  if (prescription.patient_cedula) {
+    doc.setFont("helvetica", "bold")
+    doc.text("C.I.:", pageWidth / 2, yPos)
+    doc.setFont("helvetica", "normal")
+    doc.text(prescription.patient_cedula, pageWidth / 2 + 12, yPos)
+  }
+
+  // Diagnóstico
+  yPos += 15
+  doc.setFontSize(11)
+  doc.setFont("helvetica", "bold")
+  doc.text("DIAGNÓSTICO:", margin, yPos)
+  doc.setFont("helvetica", "normal")
+  yPos += 6
   const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
-  doc.text(diagnosisLines, margin, yPos + 6)
-  yPos += 6 + diagnosisLines.length * 6 + 6
-}
+  doc.text(diagnosisLines, margin, yPos)
+  yPos += diagnosisLines.length * 5 + 10
 
-//   // Diagnóstico
-//   let yPos = margin + 60
-  
-//   if (prescription.diagnosis) {
-//     doc.setFontSize(11)
-//     doc.setFont("helvetica", "bold")
-//     doc.text("Diagnóstico:", margin, yPos)
-//     doc.setFont("helvetica", "normal")
+  // Alergias (obligatorio)
+  doc.setFontSize(11)
+  doc.setFont("helvetica", "bold")
+  doc.text("ALERGIAS:", margin, yPos)
+  doc.setFont("helvetica", "normal")
+  yPos += 6
+  const allergyLines = doc.splitTextToSize(prescription.allergies, pageWidth - margin * 2)
+  doc.text(allergyLines, margin, yPos)
+  yPos += allergyLines.length * 5 + 10
 
-//     const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
-//     doc.text(diagnosisLines, margin, yPos + 6)
-//     yPos += 6 + diagnosisLines.length * 6 + 6
-//   }
-//  // Medicamentos
-//   doc.setFontSize(11)
-//   doc.setFont("helvetica", "bold")
-//   doc.text("Medicamentos:", margin, yPos)
-//   doc.setFont("helvetica", "normal")
+  // Medicamentos (con formato detallado)
+  doc.setFontSize(11)
+  doc.setFont("helvetica", "bold")
+  doc.text("MEDICAMENTOS:", margin, yPos)
+  doc.setFont("helvetica", "normal")
+  yPos += 6
+  const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
+  doc.text(medicationLines, margin, yPos)
+  yPos += medicationLines.length * 5 + 10
 
+  // Instrucciones
+  doc.setFontSize(11)
+  doc.setFont("helvetica", "bold")
+  doc.text("INSTRUCCIONES:", margin, yPos)
+  doc.setFont("helvetica", "normal")
+  yPos += 6
+  const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
+  doc.text(instructionLines, margin, yPos)
+  yPos += instructionLines.length * 5 + 10
 
+  // Notas adicionales (si existen)
+  if (prescription.notes) {
+    doc.setFontSize(11)
+    doc.setFont("helvetica", "bold")
+    doc.text("NOTAS:", margin, yPos)
+    doc.setFont("helvetica", "normal")
+    yPos += 6
+    const notesLines = doc.splitTextToSize(prescription.notes, pageWidth - margin * 2)
+    doc.text(notesLines, margin, yPos)
+  }
 
-//   const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
-//   doc.text(medicationLines, margin, yPos + 6)
-//   yPos += 6 + medicationLines.length * 6 + 6
+  // Área de firma (parte inferior derecha)
+  const signatureAreaY = pageHeight - 60
 
-  // Instrucciones (versión resumida en la primera página)
-  // doc.setFontSize(11)
-  // doc.setFont("helvetica", "bold")
-  // doc.text("Instrucciones:", margin, yPos)
-  // doc.setFont("helvetica", "normal")
-
-  // const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
-  // // Limitar a las primeras 3 líneas en la primera página
-  // const limitedInstructions = instructionLines.slice(0, 3)
-  // doc.text(limitedInstructions, margin, yPos + 6)
-
-  // if (instructionLines.length > 3) {
-  //   doc.setFontSize(9)
-  //   doc.setTextColor(100, 100, 100)
-  //   doc.text(
-  //     "(Ver instrucciones completas en la siguiente página)",
-  //     margin,
-  //     yPos + 6 + limitedInstructions.length * 6 + 3,
-  //   )
-  // }
-
-  // yPos += 6 + limitedInstructions.length * 6 + 12
-
-  // Notas adicionales
-  // if (prescription.notes) {
-  //   doc.setFontSize(11)
-  //   doc.setFont("helvetica", "bold")
-  //   doc.setTextColor(0, 0, 0)
-  //   doc.text("Notas:", margin, yPos)
-  //   doc.setFont("helvetica", "normal")
-
-  //   const notesLines = doc.splitTextToSize(prescription.notes, pageWidth - margin * 2)
-  //   doc.text(notesLines, margin, yPos + 6)
-  //   yPos += 6 + notesLines.length * 6 + 6
-  // }
+  // Línea para firma
+  doc.setDrawColor(0, 0, 0)
+  doc.setLineWidth(0.3)
+  doc.line(pageWidth - margin - 60, signatureAreaY, pageWidth - margin, signatureAreaY)
 
   // Firma y sello
   if (signatureImage) {
@@ -238,40 +220,40 @@ if (prescription.diagnosis) {
       }
 
       const imgX = pageWidth - margin - imgWidth
-      const imgY = pageHeight - margin - imgHeight - 35
+      const imgY = signatureAreaY - imgHeight - 5
 
       doc.addImage(base64Img, "PNG", imgX, imgY, imgWidth, imgHeight)
     } catch (error) {
-      console.error("❌ Error añadiendo firma al PDF:", error)
+      console.error("Error añadiendo firma al PDF:", error)
     }
   }
 
-  // Información del médico debajo de la firma
+  // Información del médico debajo de la línea de firma
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
-  const signatureTextX = pageWidth - margin - 25
+  const signatureTextX = pageWidth - margin - 30
 
   const doctorName = `${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`
-  doc.text(doctorName, signatureTextX, pageHeight - margin - 20, { align: "center" })
+  doc.text(doctorName, signatureTextX, signatureAreaY + 6, { align: "center" })
 
   doc.setFontSize(8)
   doc.setTextColor(80, 80, 80)
-  const licenseText = `Mat. ${doctor.license_number}`
-  doc.text(licenseText, signatureTextX, pageHeight - margin - 15, { align: "center" })
+  const licenseText = `Reg. Prof. ${doctor.license_number}`
+  doc.text(licenseText, signatureTextX, signatureAreaY + 12, { align: "center" })
 
   // Pie de página
   doc.setFontSize(8)
   doc.setTextColor(128, 128, 128)
-  doc.text("Documento generado digitalmente - Página 1 de 2", pageWidth / 2, pageHeight - 8, { align: "center" })
+  doc.text("Receta médica generada digitalmente por HealtFlow", pageWidth / 2, pageHeight - 8, { align: "center" })
 }
 
-// Función para generar la página de instrucciones
+// Función para generar página de instrucciones
 async function generateInstructionsPage(doc: jsPDF, prescription: Prescription, doctor: Doctor) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 20
 
-  // Encabezado simplificado
+  // Encabezado
   doc.setFontSize(16)
   doc.setTextColor(0, 51, 102)
   doc.text("INSTRUCCIONES PARA EL PACIENTE", pageWidth / 2, margin, { align: "center" })
@@ -293,54 +275,51 @@ async function generateInstructionsPage(doc: jsPDF, prescription: Prescription, 
   doc.setLineWidth(0.5)
   doc.line(margin, margin + 20, pageWidth - margin, margin + 20)
 
-  // Instrucciones completas
   let yPos = margin + 35
+
+  // Instrucciones principales
   doc.setFontSize(12)
   doc.setFont("helvetica", "bold")
-  doc.text("INSTRUCCIONES DETALLADAS:", margin, yPos)
-
+  doc.text("INSTRUCCIONES:", margin, yPos)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(11)
+  yPos += 8
+
   const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
-
-  // Agregar un poco más de espacio entre líneas para mejor legibilidad
-  const lineHeight = 7
   instructionLines.forEach((line: string, index: number) => {
-    doc.text(line, margin, yPos + 10 + index * lineHeight)
+    doc.text(line, margin, yPos + index * 6)
   })
+  yPos += instructionLines.length * 6 + 12
 
-  yPos += 10 + instructionLines.length * lineHeight + 15
+  // Medicamentos detallados
+  doc.setFontSize(12)
+  doc.setFont("helvetica", "bold")
+  doc.text("MEDICAMENTOS:", margin, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(10)
+  yPos += 8
 
-  // Medicamentos (repetir para referencia)
-  if (yPos < pageHeight - 80) {
-    doc.setFontSize(12)
-    doc.setFont("helvetica", "bold")
-    doc.text("MEDICAMENTOS PRESCRITOS:", margin, yPos)
+  const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
+  medicationLines.forEach((line: string, index: number) => {
+    doc.text(line, margin, yPos + index * 5)
+  })
+  yPos += medicationLines.length * 5 + 12
 
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(10)
-    const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
-    medicationLines.forEach((line: string, index: number) => {
-      doc.text(line, margin, yPos + 10 + index * 5)
-    })
-
-    yPos += 10 + medicationLines.length * 5 + 15
-  }
 
   // Información de contacto del médico
   doc.setFontSize(10)
   doc.setTextColor(80, 80, 80)
   doc.text("Para consultas contactar a:", margin, pageHeight - 40)
   doc.text(`${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`, margin, pageHeight - 35)
-  doc.text(`Matrícula: ${doctor.license_number}`, margin, pageHeight - 30)
+  doc.text(`Registro Profesional: ${doctor.license_number}`, margin, pageHeight - 30)
 
   // Pie de página
   doc.setFontSize(8)
   doc.setTextColor(128, 128, 128)
-  doc.text("Documento generado digitalmente - Página 2 de 2", pageWidth / 2, pageHeight - 8, { align: "center" })
+  doc.text("Instrucciones médicas generadas digitalmente por HealtFlow", pageWidth / 2, pageHeight - 8, { align: "center" })
 }
 
-// Función auxiliar para cargar imágenes
+// Funciones auxiliares
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -373,7 +352,6 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-// Función auxiliar para convertir imagen a base64
 function imageToBase64(img: HTMLImageElement): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement("canvas")
@@ -384,6 +362,395 @@ function imageToBase64(img: HTMLImageElement): Promise<string> {
     resolve(canvas.toDataURL("image/png"))
   })
 }
+
+
+
+// import { jsPDF } from "jspdf"
+// import type { Prescription } from "./supabase/types/prescription"
+// import type { Doctor } from "./supabase/types/doctor"
+
+// // Función para formatear número de teléfono para WhatsApp
+// export function formatPhoneForWhatsApp(phone: string): string {
+//   if (!phone) return ""
+
+//   // Remover espacios, guiones y otros caracteres
+//   const cleanPhone = phone.replace(/[\s\-$$$$]/g, "")
+
+//   // Si empieza con 09, convertir a formato internacional ecuatoriano
+//   if (cleanPhone.startsWith("09")) {
+//     return "593" + cleanPhone.substring(1)
+//   }
+
+//   // Si empieza con +593, remover el +
+//   if (cleanPhone.startsWith("+593")) {
+//     return cleanPhone.substring(1)
+//   }
+
+//   // Si ya empieza con 593, devolverlo tal como está
+//   if (cleanPhone.startsWith("593")) {
+//     return cleanPhone
+//   }
+
+//   // Para otros casos, asumir que es ecuatoriano y agregar código de país
+//   return "593" + cleanPhone
+// }
+
+// // Función para generar URL de WhatsApp
+// export function generateWhatsAppURL(phone: string, message: string): string {
+//   const formattedPhone = formatPhoneForWhatsApp(phone)
+//   const encodedMessage = encodeURIComponent(message)
+//   return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`
+// }
+
+// // Función para generar PDF completo (receta + instrucciones)
+// export async function generatePrescriptionPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {
+//   const doc = new jsPDF({
+//     orientation: "portrait",
+//     unit: "mm",
+//     format: "a4",
+//   })
+
+//   // Generar primera página (receta completa)
+//   await generatePrescriptionPage(doc, prescription, doctor)
+
+//   // Agregar segunda página (solo instrucciones)
+//   doc.addPage()
+//   await generateInstructionsPage(doc, prescription, doctor)
+
+//   return doc.output("blob")
+// }
+
+// // Función para generar PDF solo de instrucciones
+// export async function generateInstructionsPDF(prescription: Prescription, doctor: Doctor): Promise<Blob> {
+//   const doc = new jsPDF({
+//     orientation: "portrait",
+//     unit: "mm",
+//     format: "a4",
+//   })
+
+//   await generateInstructionsPage(doc, prescription, doctor)
+//   return doc.output("blob")
+// }
+
+// // Función para generar la página de receta completa
+// async function generatePrescriptionPage(doc: jsPDF, prescription: Prescription, doctor: Doctor) {
+//   doc.setFont("helvetica")
+
+//   const pageWidth = doc.internal.pageSize.getWidth()
+//   const pageHeight = doc.internal.pageSize.getHeight()
+//   const margin = 20
+
+//   // Cargar imagen de firma si existe
+//   let signatureImage: HTMLImageElement | null = null
+//   if (doctor.signature_stamp_url) {
+//     try {
+//       const imageUrl = doctor.signature_stamp_url.includes("?")
+//         ? `${doctor.signature_stamp_url}&pdf=${Date.now()}`
+//         : `${doctor.signature_stamp_url}?pdf=${Date.now()}`
+//       signatureImage = await loadImage(imageUrl)
+//     } catch (error) {
+//       console.error("❌ Error cargando firma:", error)
+//     }
+//   }
+
+//   // Encabezado
+//   doc.setFontSize(18)
+//   doc.setTextColor(0, 51, 102)
+//   doc.text(`${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`, margin, margin)
+
+//   doc.setFontSize(12)
+//   doc.setTextColor(80, 80, 80)
+//   doc.text(doctor.specialty || "Médico General", margin, margin + 8)
+//   doc.text(`Matrícula: ${doctor.license_number}`, margin, margin + 14)
+
+//   // Línea divisoria
+//   doc.setDrawColor(0, 102, 204)
+//   doc.setLineWidth(0.5)
+//   doc.line(margin, margin + 18, pageWidth - margin, margin + 18)
+
+//   // Título
+//   doc.setFontSize(14)
+//   doc.setTextColor(0, 0, 0)
+//   doc.text("RECETA MÉDICA", pageWidth / 2, margin + 28, { align: "center" })
+
+//   // Fecha
+//   doc.setFontSize(10)
+//   doc.setTextColor(80, 80, 80)
+//   const formattedDate = new Date(prescription.date_prescribed).toLocaleDateString("es-ES", {
+//     year: "numeric",
+//     month: "long",
+//     day: "numeric",
+//   })
+//   doc.text(`Fecha: ${formattedDate}`, pageWidth - margin, margin + 28, { align: "right" })
+
+//   // Información del paciente
+//   doc.setFontSize(11)
+//   doc.setTextColor(0, 0, 0)
+//   doc.text(`Paciente: ${prescription.patient_name}`, margin, margin + 40)
+
+//   if (prescription.patient_age) {
+//     doc.text(`Edad: ${prescription.patient_age} años`, margin, margin + 46)
+//   }
+
+//   if (prescription.patient_cedula) {
+//     doc.text(`CI: ${prescription.patient_cedula}`, pageWidth - margin, margin + 40, { align: "right" })
+//   }
+
+//   // Línea divisoria
+//   doc.setDrawColor(200, 200, 200)
+//   doc.setLineWidth(0.2)
+//   doc.line(margin, margin + 50, pageWidth - margin, margin + 50)
+
+
+
+   
+// // Medicamentos
+// let yPos = margin + 60
+
+// doc.setFontSize(11)
+// doc.setFont("helvetica", "bold")
+// doc.text("Medicamentos:", margin, yPos)
+// doc.setFont("helvetica", "normal")
+
+// const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
+// doc.text(medicationLines, margin, yPos + 6)
+// yPos += 6 + medicationLines.length * 6 + 6
+
+// // Diagnóstico
+// if (prescription.diagnosis) {
+//   doc.setFontSize(11)
+//   doc.setFont("helvetica", "bold")
+//   doc.text("Diagnóstico:", margin, yPos)
+//   doc.setFont("helvetica", "normal")
+
+//   const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
+//   doc.text(diagnosisLines, margin, yPos + 6)
+//   yPos += 6 + diagnosisLines.length * 6 + 6
+// }
+
+// //   // Diagnóstico
+// //   let yPos = margin + 60
+  
+// //   if (prescription.diagnosis) {
+// //     doc.setFontSize(11)
+// //     doc.setFont("helvetica", "bold")
+// //     doc.text("Diagnóstico:", margin, yPos)
+// //     doc.setFont("helvetica", "normal")
+
+// //     const diagnosisLines = doc.splitTextToSize(prescription.diagnosis, pageWidth - margin * 2)
+// //     doc.text(diagnosisLines, margin, yPos + 6)
+// //     yPos += 6 + diagnosisLines.length * 6 + 6
+// //   }
+// //  // Medicamentos
+// //   doc.setFontSize(11)
+// //   doc.setFont("helvetica", "bold")
+// //   doc.text("Medicamentos:", margin, yPos)
+// //   doc.setFont("helvetica", "normal")
+
+
+
+// //   const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
+// //   doc.text(medicationLines, margin, yPos + 6)
+// //   yPos += 6 + medicationLines.length * 6 + 6
+
+//   // Instrucciones (versión resumida en la primera página)
+//   // doc.setFontSize(11)
+//   // doc.setFont("helvetica", "bold")
+//   // doc.text("Instrucciones:", margin, yPos)
+//   // doc.setFont("helvetica", "normal")
+
+//   // const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
+//   // // Limitar a las primeras 3 líneas en la primera página
+//   // const limitedInstructions = instructionLines.slice(0, 3)
+//   // doc.text(limitedInstructions, margin, yPos + 6)
+
+//   // if (instructionLines.length > 3) {
+//   //   doc.setFontSize(9)
+//   //   doc.setTextColor(100, 100, 100)
+//   //   doc.text(
+//   //     "(Ver instrucciones completas en la siguiente página)",
+//   //     margin,
+//   //     yPos + 6 + limitedInstructions.length * 6 + 3,
+//   //   )
+//   // }
+
+//   // yPos += 6 + limitedInstructions.length * 6 + 12
+
+//   // Notas adicionales
+//   // if (prescription.notes) {
+//   //   doc.setFontSize(11)
+//   //   doc.setFont("helvetica", "bold")
+//   //   doc.setTextColor(0, 0, 0)
+//   //   doc.text("Notas:", margin, yPos)
+//   //   doc.setFont("helvetica", "normal")
+
+//   //   const notesLines = doc.splitTextToSize(prescription.notes, pageWidth - margin * 2)
+//   //   doc.text(notesLines, margin, yPos + 6)
+//   //   yPos += 6 + notesLines.length * 6 + 6
+//   // }
+
+//   // Firma y sello
+//   if (signatureImage) {
+//     try {
+//       const base64Img = await imageToBase64(signatureImage)
+//       const maxWidth = 50
+//       const maxHeight = 25
+
+//       let imgWidth = maxWidth
+//       let imgHeight = (signatureImage.height * imgWidth) / signatureImage.width
+
+//       if (imgHeight > maxHeight) {
+//         imgHeight = maxHeight
+//         imgWidth = (signatureImage.width * imgHeight) / signatureImage.height
+//       }
+
+//       const imgX = pageWidth - margin - imgWidth
+//       const imgY = pageHeight - margin - imgHeight - 35
+
+//       doc.addImage(base64Img, "PNG", imgX, imgY, imgWidth, imgHeight)
+//     } catch (error) {
+//       console.error("❌ Error añadiendo firma al PDF:", error)
+//     }
+//   }
+
+//   // Información del médico debajo de la firma
+//   doc.setFontSize(10)
+//   doc.setTextColor(0, 0, 0)
+//   const signatureTextX = pageWidth - margin - 25
+
+//   const doctorName = `${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`
+//   doc.text(doctorName, signatureTextX, pageHeight - margin - 20, { align: "center" })
+
+//   doc.setFontSize(8)
+//   doc.setTextColor(80, 80, 80)
+//   const licenseText = `Mat. ${doctor.license_number}`
+//   doc.text(licenseText, signatureTextX, pageHeight - margin - 15, { align: "center" })
+
+//   // Pie de página
+//   doc.setFontSize(8)
+//   doc.setTextColor(128, 128, 128)
+//   doc.text("Documento generado digitalmente - Página 1 de 2", pageWidth / 2, pageHeight - 8, { align: "center" })
+// }
+
+// // Función para generar la página de instrucciones
+// async function generateInstructionsPage(doc: jsPDF, prescription: Prescription, doctor: Doctor) {
+//   const pageWidth = doc.internal.pageSize.getWidth()
+//   const pageHeight = doc.internal.pageSize.getHeight()
+//   const margin = 20
+
+//   // Encabezado simplificado
+//   doc.setFontSize(16)
+//   doc.setTextColor(0, 51, 102)
+//   doc.text("INSTRUCCIONES PARA EL PACIENTE", pageWidth / 2, margin, { align: "center" })
+
+//   // Información del paciente
+//   doc.setFontSize(12)
+//   doc.setTextColor(0, 0, 0)
+//   doc.text(`Paciente: ${prescription.patient_name}`, margin, margin + 15)
+
+//   const formattedDate = new Date(prescription.date_prescribed).toLocaleDateString("es-ES", {
+//     year: "numeric",
+//     month: "long",
+//     day: "numeric",
+//   })
+//   doc.text(`Fecha: ${formattedDate}`, pageWidth - margin, margin + 15, { align: "right" })
+
+//   // Línea divisoria
+//   doc.setDrawColor(0, 102, 204)
+//   doc.setLineWidth(0.5)
+//   doc.line(margin, margin + 20, pageWidth - margin, margin + 20)
+
+//   // Instrucciones completas
+//   let yPos = margin + 35
+//   doc.setFontSize(12)
+//   doc.setFont("helvetica", "bold")
+//   doc.text("INSTRUCCIONES DETALLADAS:", margin, yPos)
+
+//   doc.setFont("helvetica", "normal")
+//   doc.setFontSize(11)
+//   const instructionLines = doc.splitTextToSize(prescription.instructions, pageWidth - margin * 2)
+
+//   // Agregar un poco más de espacio entre líneas para mejor legibilidad
+//   const lineHeight = 7
+//   instructionLines.forEach((line: string, index: number) => {
+//     doc.text(line, margin, yPos + 10 + index * lineHeight)
+//   })
+
+//   yPos += 10 + instructionLines.length * lineHeight + 15
+
+//   // Medicamentos (repetir para referencia)
+//   if (yPos < pageHeight - 80) {
+//     doc.setFontSize(12)
+//     doc.setFont("helvetica", "bold")
+//     doc.text("MEDICAMENTOS PRESCRITOS:", margin, yPos)
+
+//     doc.setFont("helvetica", "normal")
+//     doc.setFontSize(10)
+//     const medicationLines = doc.splitTextToSize(prescription.medications, pageWidth - margin * 2)
+//     medicationLines.forEach((line: string, index: number) => {
+//       doc.text(line, margin, yPos + 10 + index * 5)
+//     })
+
+//     yPos += 10 + medicationLines.length * 5 + 15
+//   }
+
+//   // Información de contacto del médico
+//   doc.setFontSize(10)
+//   doc.setTextColor(80, 80, 80)
+//   doc.text("Para consultas contactar a:", margin, pageHeight - 40)
+//   doc.text(`${doctor.gender === "female" ? "Dra." : "Dr."} ${doctor.full_name}`, margin, pageHeight - 35)
+//   doc.text(`Matrícula: ${doctor.license_number}`, margin, pageHeight - 30)
+
+//   // Pie de página
+//   doc.setFontSize(8)
+//   doc.setTextColor(128, 128, 128)
+//   doc.text("Documento generado digitalmente - Página 2 de 2", pageWidth / 2, pageHeight - 8, { align: "center" })
+// }
+
+// // Función auxiliar para cargar imágenes
+// function loadImage(url: string): Promise<HTMLImageElement> {
+//   return new Promise((resolve, reject) => {
+//     const img = new Image()
+//     img.crossOrigin = "Anonymous"
+
+//     img.onload = () => {
+//       const canvas = document.createElement("canvas")
+//       const ctx = canvas.getContext("2d")
+
+//       if (!ctx) {
+//         resolve(img)
+//         return
+//       }
+
+//       canvas.width = img.width
+//       canvas.height = img.height
+//       ctx.drawImage(img, 0, 0, img.width, img.height)
+
+//       const correctedImg = new Image()
+//       correctedImg.crossOrigin = "Anonymous"
+
+//       correctedImg.onload = () => resolve(correctedImg)
+//       correctedImg.onerror = (e) => reject(e)
+
+//       correctedImg.src = canvas.toDataURL("image/png")
+//     }
+
+//     img.onerror = (e) => reject(e)
+//     img.src = url
+//   })
+// }
+
+// // Función auxiliar para convertir imagen a base64
+// function imageToBase64(img: HTMLImageElement): Promise<string> {
+//   return new Promise((resolve) => {
+//     const canvas = document.createElement("canvas")
+//     canvas.width = img.naturalWidth
+//     canvas.height = img.naturalHeight
+//     const ctx = canvas.getContext("2d")!
+//     ctx.drawImage(img, 0, 0)
+//     resolve(canvas.toDataURL("image/png"))
+//   })
+// }
 
 
 // import { jsPDF } from "jspdf"

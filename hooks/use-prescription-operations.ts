@@ -45,6 +45,207 @@ export function usePrescriptionOperations() {
     }
   }
 
+  // Nueva función para manejar archivado inteligente
+  const handleArchive = async (
+    prescriptionId: string,
+  ): Promise<{ needsConfirmation: boolean; patientData?: any; prescriptionData?: any; relatedData?: any }> => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        showError("Error de autenticación", "No se pudo verificar la sesión del usuario")
+        return { needsConfirmation: false }
+      }
+
+      // Obtener información de la prescripción con datos del paciente
+      const { data: prescriptionData, error: prescriptionError } = await supabase
+        .from("prescriptions")
+        .select(`
+          *,
+          medical_histories!inner(
+            id,
+            patient_id,
+            patients!inner(
+              id,
+              full_name,
+              is_active
+            )
+          )
+        `)
+        .eq("id", prescriptionId)
+        .eq("doctor_id", user.id)
+        .single()
+
+      if (prescriptionError || !prescriptionData) {
+        // Si no tiene historia clínica asociada, archivar directamente
+        const success = await archivePrescription(prescriptionId, "la prescripción")
+        return { needsConfirmation: false }
+      }
+
+      // Si tiene historia clínica y paciente asociado
+      const patient = prescriptionData.medical_histories.patients
+      const medicalHistoryId = prescriptionData.medical_histories.id
+
+      // Verificar si el paciente está activo
+      if (patient.is_active) {
+        // Contar elementos relacionados activos
+        const [consultationsCount, prescriptionsCount, representativesCount] = await Promise.all([
+          // Contar consultas activas
+          supabase
+            .from("consultations")
+            .select("*", { count: "exact", head: true })
+            .eq("medical_history_id", medicalHistoryId)
+            .eq("is_active", true),
+          // Contar prescripciones activas (excluyendo la actual)
+          supabase
+            .from("prescriptions")
+            .select("*", { count: "exact", head: true })
+            .eq("medical_history_id", medicalHistoryId)
+            .eq("is_active", true)
+            .neq("id", prescriptionId),
+          // Contar representantes activos
+          supabase
+            .from("patient_representatives")
+            .select("*", { count: "exact", head: true })
+            .eq("patient_id", patient.id)
+            .eq("is_active", true),
+        ])
+
+        const relatedData = {
+          consultations: consultationsCount.count || 0,
+          prescriptions: prescriptionsCount.count || 0,
+          representatives: representativesCount.count || 0,
+        }
+
+        // Si hay elementos relacionados, mostrar confirmación
+        if (relatedData.consultations > 0 || relatedData.prescriptions > 0 || relatedData.representatives > 0) {
+          return {
+            needsConfirmation: true,
+            patientData: patient,
+            prescriptionData: prescriptionData,
+            relatedData: relatedData,
+          }
+        } else {
+          // Si no hay elementos relacionados, archivar directamente
+          const success = await archivePrescription(prescriptionId, prescriptionData.patient_name)
+          return { needsConfirmation: false }
+        }
+      } else {
+        // Si el paciente ya está archivado, archivar directamente
+        const success = await archivePrescription(prescriptionId, prescriptionData.patient_name)
+        return { needsConfirmation: false }
+      }
+    } catch (error: any) {
+      showError("Error al verificar", error.message || "No se pudo verificar el estado de la prescripción")
+      return { needsConfirmation: false }
+    }
+  }
+
+  // Nueva función para archivar con paciente completo
+  const archiveWithPatient = async (
+    prescriptionId: string,
+    patientId: string,
+    patientName: string,
+  ): Promise<boolean> => {
+    setLoading(true)
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        showError("Error de autenticación", "No se pudo verificar la sesión del usuario")
+        return false
+      }
+
+      // Obtener historia médica
+      const { data: medicalHistory } = await supabase
+        .from("medical_histories")
+        .select("id")
+        .eq("patient_id", patientId)
+        .single()
+
+      // Archivar en orden: representantes -> consultas -> prescripciones -> historia médica -> paciente
+      if (medicalHistory) {
+        // Archivar consultas
+        const { error: consultationsError } = await supabase
+          .from("consultations")
+          .update({
+            is_active: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("medical_history_id", medicalHistory.id)
+
+        if (consultationsError) {
+          console.error("Error archivando consultas:", consultationsError)
+        }
+
+        // Archivar prescripciones
+        const { error: prescriptionsError } = await supabase
+          .from("prescriptions")
+          .update({
+            is_active: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("medical_history_id", medicalHistory.id)
+
+        if (prescriptionsError) {
+          console.error("Error archivando prescripciones:", prescriptionsError)
+        }
+
+        // Archivar historia médica
+        const { error: historyError } = await supabase
+          .from("medical_histories")
+          .update({
+            is_active: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", medicalHistory.id)
+
+        if (historyError) {
+          console.error("Error archivando historia médica:", historyError)
+        }
+      }
+
+      // Archivar representantes
+      const { error: representativesError } = await supabase
+        .from("patient_representatives")
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("patient_id", patientId)
+
+      if (representativesError) {
+        console.error("Error archivando representantes:", representativesError)
+      }
+
+      // Archivar paciente
+      const { error: patientArchiveError } = await supabase
+        .from("patients")
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", patientId)
+
+      if (patientArchiveError) throw patientArchiveError
+
+      showSuccess(
+        "Paciente y prescripción archivados",
+        `${patientName} y toda su historia clínica han sido archivados correctamente`,
+      )
+      return true
+    } catch (error: any) {
+      showError("Error al archivar", error.message || "No se pudo archivar el paciente y la prescripción")
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleRestore = async (
     prescriptionId: string,
   ): Promise<{ needsConfirmation: boolean; patientData?: any; prescriptionData?: any }> => {
@@ -206,7 +407,6 @@ export function usePrescriptionOperations() {
     }
   }
 
-
   //se mantiene como alternativa a archivar prescripciones para evitar errores si alguno utiliza la de eliminar que solo se archive
   const deletePrescription = archivePrescription
 
@@ -249,12 +449,273 @@ export function usePrescriptionOperations() {
     loading,
     archivePrescription,
     restorePrescription,
+    handleArchive, // Nueva función para archivado inteligente
+    archiveWithPatient, // Nueva función para archivar con paciente
     handleRestore,
     restoreWithPatient,
     deletePrescription, //archiva la prescripcion no se permite eliminar por cumplimiento normativo
     duplicatePrescription,
   }
 }
+
+
+// "use client"
+
+// import { useState } from "react"
+// import { useRouter } from "next/navigation"
+// import { supabase } from "@/lib/supabase/supabase"
+// import { useToastEnhanced } from "./use-toast-enhanced"
+// import type { Prescription } from "@/lib/supabase/types/prescription"
+
+// export function usePrescriptionOperations() {
+//   const [loading, setLoading] = useState(false)
+//   const router = useRouter()
+//   const { showSuccess, showError, showWarning } = useToastEnhanced()
+
+//   const archivePrescription = async (prescriptionId: string, patientName: string): Promise<boolean> => {
+//     setLoading(true)
+//     try {
+//       const { error } = await supabase.from("prescriptions").update({ is_active: false }).eq("id", prescriptionId)
+
+//       if (error) throw error
+
+//       showSuccess("Receta archivada", `La receta de ${patientName} ha sido archivada correctamente`)
+//       return true
+//     } catch (error: any) {
+//       showError("Error al archivar", error.message || "No se pudo archivar la receta")
+//       return false
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+
+//   const restorePrescription = async (prescriptionId: string, patientName: string): Promise<boolean> => {
+//     setLoading(true)
+//     try {
+//       const { error } = await supabase.from("prescriptions").update({ is_active: true }).eq("id", prescriptionId)
+
+//       if (error) throw error
+
+//       showSuccess("Receta restaurada", `La receta de ${patientName} ha sido restaurada correctamente`)
+//       return true
+//     } catch (error: any) {
+//       showError("Error al restaurar", error.message || "No se pudo restaurar la receta")
+//       return false
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+
+//   const handleRestore = async (
+//     prescriptionId: string,
+//   ): Promise<{ needsConfirmation: boolean; patientData?: any; prescriptionData?: any }> => {
+//     try {
+//       const {
+//         data: { user },
+//       } = await supabase.auth.getUser()
+
+//       if (!user) {
+//         showError("Error de autenticación", "No se pudo verificar la sesión del usuario")
+//         return { needsConfirmation: false }
+//       }
+
+//       // Obtener información de la prescripción
+//       const { data: prescriptionData, error: prescriptionError } = await supabase
+//         .from("prescriptions")
+//         .select(`
+//           *,
+//           medical_histories!inner(
+//             id,
+//             patient_id,
+//             patients!inner(
+//               id,
+//               full_name,
+//               is_active
+//             )
+//           )
+//         `)
+//         .eq("id", prescriptionId)
+//         .eq("doctor_id", user.id)
+//         .single()
+
+//       if (prescriptionError || !prescriptionData) {
+//         // Si no tiene historia clínica asociada, restaurar directamente
+//         const success = await restorePrescription(prescriptionId, "la prescripción")
+//         return { needsConfirmation: false }
+//       }
+
+//       // Si tiene historia clínica y paciente asociado
+//       const patient = prescriptionData.medical_histories.patients
+
+//       // Verificar si el paciente está archivado
+//       if (!patient.is_active) {
+//         return {
+//           needsConfirmation: true,
+//           patientData: patient,
+//           prescriptionData: prescriptionData,
+//         }
+//       } else {
+//         // Si el paciente está activo, solo restaurar la prescripción
+//         const success = await restorePrescription(prescriptionId, prescriptionData.patient_name)
+//         return { needsConfirmation: false }
+//       }
+//     } catch (error: any) {
+//       showError("Error al verificar", error.message || "No se pudo verificar el estado de la prescripción")
+//       return { needsConfirmation: false }
+//     }
+//   }
+
+//   const restoreWithPatient = async (
+//     prescriptionId: string,
+//     patientId: string,
+//     patientName: string,
+//   ): Promise<boolean> => {
+//     setLoading(true)
+//     try {
+//       const {
+//         data: { user },
+//       } = await supabase.auth.getUser()
+
+//       if (!user) {
+//         showError("Error de autenticación", "No se pudo verificar la sesión del usuario")
+//         return false
+//       }
+
+//       // Obtener historia médica
+//       const { data: medicalHistory } = await supabase
+//         .from("medical_histories")
+//         .select("id")
+//         .eq("patient_id", patientId)
+//         .single()
+
+//       // Restaurar en orden: paciente -> historia médica -> representantes -> consultas -> prescripciones
+//       // Restaurar paciente
+//       const { error: patientRestoreError } = await supabase
+//         .from("patients")
+//         .update({
+//           is_active: true,
+//           updated_at: new Date().toISOString(),
+//         })
+//         .eq("id", patientId)
+
+//       if (patientRestoreError) throw patientRestoreError
+
+//       if (medicalHistory) {
+//         // Restaurar historia médica
+//         const { error: historyError } = await supabase
+//           .from("medical_histories")
+//           .update({
+//             is_active: true,
+//             updated_at: new Date().toISOString(),
+//           })
+//           .eq("id", medicalHistory.id)
+
+//         if (historyError) {
+//           console.error("Error restaurando historia médica:", historyError)
+//         }
+
+//         // Restaurar consultas
+//         const { error: consultationsError } = await supabase
+//           .from("consultations")
+//           .update({
+//             is_active: true,
+//             updated_at: new Date().toISOString(),
+//           })
+//           .eq("medical_history_id", medicalHistory.id)
+
+//         if (consultationsError) {
+//           console.error("Error restaurando consultas:", consultationsError)
+//         }
+
+//         // Restaurar prescripciones
+//         const { error: prescriptionsError } = await supabase
+//           .from("prescriptions")
+//           .update({
+//             is_active: true,
+//             updated_at: new Date().toISOString(),
+//           })
+//           .eq("medical_history_id", medicalHistory.id)
+
+//         if (prescriptionsError) {
+//           console.error("Error restaurando prescripciones:", prescriptionsError)
+//         }
+//       }
+
+//       // Restaurar representantes
+//       const { error: representativesError } = await supabase
+//         .from("patient_representatives")
+//         .update({
+//           is_active: true,
+//           updated_at: new Date().toISOString(),
+//         })
+//         .eq("patient_id", patientId)
+
+//       if (representativesError) {
+//         console.error("Error restaurando representantes:", representativesError)
+//       }
+
+//       showSuccess(
+//         "Paciente y prescripción restaurados",
+//         `${patientName} y toda su historia clínica han sido restaurados correctamente`,
+//       )
+//       return true
+//     } catch (error: any) {
+//       showError("Error al restaurar", error.message || "No se pudo restaurar el paciente y la prescripción")
+//       return false
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+
+
+//   //se mantiene como alternativa a archivar prescripciones para evitar errores si alguno utiliza la de eliminar que solo se archive
+//   const deletePrescription = archivePrescription
+
+//   const duplicatePrescription = async (prescription: Prescription): Promise<void> => {
+//     setLoading(true)
+//     try {
+//       const { data, error } = await supabase
+//         .from("prescriptions")
+//         .insert({
+//           doctor_id: prescription.doctor_id,
+//           patient_name: prescription.patient_name,
+//           patient_age: prescription.patient_age,
+//           patient_cedula: prescription.patient_cedula,
+//           patient_phone: prescription.patient_phone,
+//           patient_address: prescription.patient_address,
+//           diagnosis: prescription.diagnosis,
+//           medications: prescription.medications,
+//           instructions: prescription.instructions,
+//           notes: prescription.notes,
+//           date_prescribed: new Date().toISOString().split("T")[0], // Fecha actual
+//           is_active: true,
+//         })
+//         .select()
+//         .single()
+
+//       if (error) throw error
+
+//       showSuccess("Receta duplicada", `Se ha creado una copia de la receta para ${prescription.patient_name}`)
+
+//       // Navegar a la nueva receta
+//       router.push(`/dashboard/prescriptions/${data.id}`)
+//     } catch (error: any) {
+//       showError("Error al duplicar", error.message || "No se pudo duplicar la receta")
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+
+//   return {
+//     loading,
+//     archivePrescription,
+//     restorePrescription,
+//     handleRestore,
+//     restoreWithPatient,
+//     deletePrescription, //archiva la prescripcion no se permite eliminar por cumplimiento normativo
+//     duplicatePrescription,
+//   }
+// }
 
 
 // "use client"
