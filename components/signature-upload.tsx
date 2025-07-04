@@ -33,6 +33,7 @@ import {
 import { supabase } from "@/lib/supabase/supabase";
 import { useToastEnhanced } from "@/hooks/use-toast-enhanced";
 import type { SignatureUploadProps } from "@/lib/supabase/types/signatureupload";
+import SignatureCanvas from "react-signature-canvas";
 
 export function SignatureUpload({
   doctorId,
@@ -51,6 +52,8 @@ export function SignatureUpload({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { showSuccess, showError, showWarning } = useToastEnhanced();
+  const signatureCanvasRef = useRef<SignatureCanvas>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const handleFileChange = (file: File | null) => {
     setError(null);
@@ -285,17 +288,78 @@ export function SignatureUpload({
       setSaving(false);
     }
   };
+  const clearCanvas = () => {
+    signatureCanvasRef.current?.clear();
+  };
+
+  const saveCanvasSignature = async () => {
+    if (!signatureCanvasRef.current || signatureCanvasRef.current.isEmpty()) {
+      showWarning("Firma vacía", "Por favor dibuja una firma primero");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const dataUrl = signatureCanvasRef.current
+        .getCanvas()
+        .toDataURL("image/png");
+
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+
+      const file = new File([blob], "signature_canvas.png", {
+        type: "image/png",
+      });
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) throw new Error("Usuario no autenticado");
+
+      const filePath = `${user.id}/signature_canvas_${Date.now()}.png`;
+
+      const { data, error: uploadError } = await supabase.storage
+        .from("signatures")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("signatures")
+        .getPublicUrl(filePath);
+
+      const signatureUrl = publicUrlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("doctors")
+        .update({ signature_stamp_url: signatureUrl })
+        .eq("id", doctorId);
+
+      if (updateError) throw updateError;
+
+      showSuccess("Firma guardada", "Tu firma fue guardada desde el canvas");
+      onSuccess();
+    } catch (err: any) {
+      showError("Error guardando firma", err.message || "Error desconocido");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
           <Upload className="h-5 w-5 mr-2" />
-          Firma y Sello Digital
+          Firma Digital
         </CardTitle>
         <CardDescription>
-          Sube una imagen PNG que contenga tanto tu firma como tu sello médico
-          para usar en las recetas
+          Dibuja tu firma o sube una imagen PNG que contenga tanto tu firma como
+          tu sello médico para usar en las recetas. Puede actualizarla cuando
+          desees!
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -305,7 +369,7 @@ export function SignatureUpload({
         {signaturePreview && (
           <div className="border rounded-lg p-4 bg-gray-50">
             <div className="flex justify-between items-center mb-2">
-              <p className="text-sm text-gray-600">Firma y sello actual:</p>
+              <p className="text-sm text-gray-600">Firma actual:</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -370,9 +434,45 @@ export function SignatureUpload({
             </div>
           </div>
         )}
+        <div className="space-y-2">
+          <Label>Dibuja tu firma aquí:</Label>
+          <div className="border rounded p-2 bg-white">
+            <SignatureCanvas
+              penColor="black"
+              backgroundColor="white"
+              ref={signatureCanvasRef}
+              canvasProps={{
+                width: 400,
+                height: 150,
+                className: "border rounded",
+              }}
+              onBegin={() => setIsDrawing(true)}
+              onEnd={() => setIsDrawing(false)}
+            />
+          </div>
+          <div className="flex space-x-2 mt-2">
+            <Button
+              type="button"
+              onClick={clearCanvas}
+              variant="outline"
+              disabled={saving}
+            >
+              Limpiar
+            </Button>
+            <Button
+              type="button"
+              onClick={saveCanvasSignature}
+              disabled={saving || isDrawing}
+            >
+              Guardar Firma desde Canvas
+            </Button>
+          </div>
+        </div>
 
         <div>
-          <Label htmlFor="signature_stamp">Nueva Firma y Sello</Label>
+          <Label htmlFor="signature_stamp">
+            Sube una imagen con tu firma y sello
+          </Label>
           <Input
             id="signature_stamp"
             type="file"
